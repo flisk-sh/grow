@@ -66,6 +66,22 @@ const logoHost = (name, url) => { const n = String(name || '').toLowerCase().tri
 const logo = (name, url) => { const h = logoHost(name, url); const i = document.createElement('img'); i.className = 'logo'; i.alt = ''; i.width = 16; i.height = 16; i.loading = 'lazy'; if (h) i.src = '/logo/' + h; else i.hidden = true; i.onerror = () => { i.hidden = true; }; return i; };
 const named = (tag, cls, name, url) => { const n = el(tag, cls); n.append(logo(name, url), document.createTextNode(name)); return n; };
 
+const LOGO_WORDS = { 'Hacker News': 'news.ycombinator.com', 'Show HN': 'news.ycombinator.com', Bluesky: 'bsky.app', GitHub: 'github.com', Reddit: 'reddit.com', 'Product Hunt': 'producthunt.com', SaaSHub: 'saashub.com', AlternativeTo: 'alternativeto.net', BetaList: 'betalist.com', Toolradar: 'toolradar.com', Uneed: 'uneed.best', DevHunt: 'devhunt.org', AIChief: 'aichief.com', SourceForge: 'sourceforge.net', LinkedIn: 'linkedin.com', 'Indie Hackers': 'indiehackers.com', 'dev.to': 'dev.to', Discord: 'discord.com', YouTube: 'youtube.com', 'Stack Overflow': 'stackoverflow.com', Medium: 'medium.com', Slack: 'slack.com', Mastodon: 'joinmastodon.org', Lobsters: 'lobste.rs', ChatGPT: 'chatgpt.com', Claude: 'claude.ai', Perplexity: 'perplexity.ai', Gemini: 'gemini.google.com', Twitter: 'x.com', Citable: 'citable.flisk.si', 'README Score': 'readme.flisk.si', 'jobs.flisk.si': 'jobs.flisk.si', 'bot.flisk.si': 'bot.flisk.si' };
+const LOGO_RE = new RegExp('(?<![\\w.])(' + Object.keys(LOGO_WORDS).sort((a, b) => b.length - a.length).map((w) => w.replace(/\./g, '\\.')).join('|') + ')(?![\\w])', 'g');
+// Puts a logo before every company name in the page's text, after each render.
+function logoize(root) {
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (t) => { const p = t.parentElement; if (!p || p.closest('script,style,textarea,input,select,option,.nologo')) return NodeFilter.FILTER_REJECT; if (t.previousSibling?.classList?.contains('logo')) return NodeFilter.FILTER_REJECT; LOGO_RE.lastIndex = 0; return LOGO_RE.test(t.data) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; } });
+  const todo = []; while (walk.nextNode()) todo.push(walk.currentNode);
+  for (const t of todo) {
+    const frag = document.createDocumentFragment(); let last = 0; LOGO_RE.lastIndex = 0;
+    for (const m of t.data.matchAll(LOGO_RE)) { frag.append(t.data.slice(last, m.index)); const i = document.createElement('img'); i.className = 'logo'; i.alt = ''; i.width = 16; i.height = 16; i.loading = 'lazy'; i.src = '/logo/' + LOGO_WORDS[m[1]]; i.onerror = () => { i.hidden = true; }; frag.append(i, m[1]); last = m.index + m[1].length; }
+    frag.append(t.data.slice(last)); t.replaceWith(frag);
+  }
+}
+let logoBusy = false;
+new MutationObserver(() => { if (logoBusy) return; logoBusy = true; requestAnimationFrame(() => { logoize(document.body); logoBusy = false; }); }).observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('DOMContentLoaded', () => logoize(document.body));
+
 const toast = (t) => { const n = $('#toast'); n.textContent = t; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 1600); };
 const copy = (t, b) => { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast('Copied')); };
 const link = (label, href, cls) => { const a = el('a', 'btn' + (cls ? ' ' + cls : ''), label); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; };
