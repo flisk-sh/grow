@@ -43,6 +43,16 @@ export async function handle(req, env, deps = {}) {
   if (path === '/llms.txt') return new Response(LLMS, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   if (path === '/icon.svg' || path === '/favicon.ico') return new Response(ICON, { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'max-age=86400' } });
   if (path === '/health') return json(200, { ok: true });
+  // A company's logo, fetched once and cached, so visitors' browsers only talk to grow.flisk.si.
+  const lm = /^\/logo\/([a-z0-9.-]{3,80})$/.exec(path);
+  if (lm) {
+    const hit = cache && await cache.match(req);
+    if (hit) return hit;
+    const r = await fetchImpl(`https://icons.duckduckgo.com/ip3/${lm[1]}.ico`).catch(() => null);
+    const res = new Response(r?.ok ? r.body : ICON, { headers: { 'content-type': r?.ok ? (r.headers.get('content-type') || 'image/x-icon') : 'image/svg+xml', 'cache-control': 'public, max-age=604800' } });
+    if (cache && r?.ok) await cache.put(req, res.clone());
+    return res;
+  }
   const cab = await cabinet(req, env, { fetch: fetchImpl });
   if (cab) return cab;
 

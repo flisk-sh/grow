@@ -4,7 +4,7 @@
 
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-export const CSS = String.raw`
+export const CSS = String.raw`.logo{width:16px;height:16px;vertical-align:-3px;margin-right:6px;border-radius:3px;flex:none}
 :root{--bg:#eeece5;--bg2:#e5e2d9;--panel:#f6f4ee;--panel2:#e8e5dc;--ink:#121212;--mut:#3d3d42;--faint:#6a6a70;--line:rgba(18,18,18,.13);--line2:rgba(18,18,18,.82);
 --acc:#22c55e;--accink:#04120a;--acctext:#137a3a;--tint:rgba(34,197,94,.12);--red:#be123c;--amber:#9a5300;
 --display:"Fraunces",Georgia,"Times New Roman",serif;--font:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color-scheme:light}
@@ -61,6 +61,11 @@ footer{margin:0 -36px;padding:22px 36px 40px;font:500 11px var(--mono);text-tran
 const JS = String.raw`
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+const LOGO_HOSTS = { 'hacker news': 'news.ycombinator.com', 'hacker news (show hn)': 'news.ycombinator.com', 'show hn': 'news.ycombinator.com', bluesky: 'bsky.app', github: 'github.com', reddit: 'reddit.com', 'product hunt': 'producthunt.com', saashub: 'saashub.com', alternativeto: 'alternativeto.net', betalist: 'betalist.com', toolradar: 'toolradar.com', uneed: 'uneed.best', devhunt: 'devhunt.org', aichief: 'aichief.com', sourceforge: 'sourceforge.net', 'x': 'x.com', twitter: 'x.com', linkedin: 'linkedin.com', 'indie hackers': 'indiehackers.com', 'dev.to': 'dev.to', discord: 'discord.com', youtube: 'youtube.com', 'stack overflow': 'stackoverflow.com', medium: 'medium.com', slack: 'slack.com', mastodon: 'joinmastodon.org', lobsters: 'lobste.rs', 'lobste.rs': 'lobste.rs', citable: 'citable.flisk.si', 'readme score': 'readme.flisk.si', 'flisk analytics': 'analytics.flisk.si' };
+const logoHost = (name, url) => { const n = String(name || '').toLowerCase().trim(); const k = Object.keys(LOGO_HOSTS).find((x) => n === x || n.startsWith(x + ' ') || n.startsWith('r/') && x === 'reddit'); if (k) return LOGO_HOSTS[k]; try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; } };
+const logo = (name, url) => { const h = logoHost(name, url); const i = document.createElement('img'); i.className = 'logo'; i.alt = ''; i.width = 16; i.height = 16; i.loading = 'lazy'; if (h) i.src = '/logo/' + h; else i.hidden = true; i.onerror = () => { i.hidden = true; }; return i; };
+const named = (tag, cls, name, url) => { const n = el(tag, cls); n.append(logo(name, url), document.createTextNode(name)); return n; };
+
 const toast = (t) => { const n = $('#toast'); n.textContent = t; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 1600); };
 const copy = (t, b) => { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast('Copied')); };
 const link = (label, href, cls) => { const a = el('a', 'btn' + (cls ? ' ' + cls : ''), label); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; };
@@ -97,7 +102,7 @@ function draw(id, plan) {
 
   const p = section('Where to find them', 'Places these buyers already talk. Read the rules of each place before you post.');
   const pg = el('div', 'grid');
-  plan.places.forEach((x) => { const cell = el(x.url ? 'a' : 'div', x.url ? 'cell' : ''); if (x.url) { cell.href = x.url; cell.target = '_blank'; cell.rel = 'noopener'; } cell.append(el('h3', '', x.name), el('p', '', x.why)); pg.append(cell); });
+  plan.places.forEach((x) => { const cell = el(x.url ? 'a' : 'div', x.url ? 'cell' : ''); if (x.url) { cell.href = x.url; cell.target = '_blank'; cell.rel = 'noopener'; } cell.append(named('h3', '', x.name, x.url), el('p', '', x.why)); pg.append(cell); });
   p.append(pg); out.append(p);
 
   const m = section('Emails to send (' + plan.emails.length + ')', 'Drafts only. Add the address in your mail and press Send yourself: nothing is sent for you.');
@@ -129,12 +134,12 @@ function draw(id, plan) {
 
   const li = section('Where to list it', 'Directories and launch lists. Each one is a link to its own submit page.');
   const lg = el('div', 'grid');
-  plan.listings.forEach((x) => { const a = el('a', 'cell'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; a.append(el('h3', '', x.name), el('p', '', x.why)); lg.append(a); });
+  plan.listings.forEach((x) => { const a = el('a', 'cell'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; a.append(named('h3', '', x.name, x.url), el('p', '', x.why)); lg.append(a); });
   li.append(lg); out.append(li);
 
   const t = section('More free checks');
   const tg = el('div', 'grid');
-  plan.tools.forEach((x) => { const a = el('a', 'cell'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; a.append(el('h3', '', x.name), el('p', '', x.why)); tg.append(a); });
+  plan.tools.forEach((x) => { const a = el('a', 'cell'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; a.append(named('h3', '', x.name, x.url), el('p', '', x.why)); tg.append(a); });
   t.append(tg); out.append(t);
   out.hidden = false; $('#about').hidden = true;
 }

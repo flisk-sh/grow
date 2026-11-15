@@ -39,3 +39,11 @@ describe('jobs', () => {
     expect((await call(e, cookie, `/api/sites/${id}/jobs`, {})).status).toBe(503);
   });
 });
+
+test('logo proxy serves a company icon and refuses odd paths', async () => {
+  const f = async (u) => (String(u).includes('icons.duckduckgo.com/ip3/reddit.com.ico') ? new Response('ico', { headers: { 'content-type': 'image/x-icon' } }) : new Response('no', { status: 404 }));
+  const r = await handle(new Request(`${O}/logo/reddit.com`), { DB: fakeD1() }, { fetch: f, cache: null });
+  expect(r.headers.get('content-type')).toBe('image/x-icon');
+  expect(await r.text()).toBe('ico');
+  expect((await handle(new Request(`${O}/logo/../x`), { DB: fakeD1() }, { fetch: f, cache: null })).headers.get('content-type')).not.toBe('image/x-icon');
+});

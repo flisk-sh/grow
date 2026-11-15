@@ -230,6 +230,11 @@ const CAB_CSS = String.raw`
 const CAB_JS = String.raw`
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+const LOGO_HOSTS = { 'hacker news': 'news.ycombinator.com', 'hacker news (show hn)': 'news.ycombinator.com', 'show hn': 'news.ycombinator.com', bluesky: 'bsky.app', github: 'github.com', reddit: 'reddit.com', 'product hunt': 'producthunt.com', saashub: 'saashub.com', alternativeto: 'alternativeto.net', betalist: 'betalist.com', toolradar: 'toolradar.com', uneed: 'uneed.best', devhunt: 'devhunt.org', aichief: 'aichief.com', sourceforge: 'sourceforge.net', 'x': 'x.com', twitter: 'x.com', linkedin: 'linkedin.com', 'indie hackers': 'indiehackers.com', 'dev.to': 'dev.to', discord: 'discord.com', youtube: 'youtube.com', 'stack overflow': 'stackoverflow.com', medium: 'medium.com', slack: 'slack.com', mastodon: 'joinmastodon.org', lobsters: 'lobste.rs', 'lobste.rs': 'lobste.rs', citable: 'citable.flisk.si', 'readme score': 'readme.flisk.si', 'flisk analytics': 'analytics.flisk.si' };
+const logoHost = (name, url) => { const n = String(name || '').toLowerCase().trim(); const k = Object.keys(LOGO_HOSTS).find((x) => n === x || n.startsWith(x + ' ') || n.startsWith('r/') && x === 'reddit'); if (k) return LOGO_HOSTS[k]; try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; } };
+const logo = (name, url) => { const h = logoHost(name, url); const i = document.createElement('img'); i.className = 'logo'; i.alt = ''; i.width = 16; i.height = 16; i.loading = 'lazy'; if (h) i.src = '/logo/' + h; else i.hidden = true; i.onerror = () => { i.hidden = true; }; return i; };
+const named = (tag, cls, name, url) => { const n = el(tag, cls); n.append(logo(name, url), document.createTextNode(name)); return n; };
+
 const toast = (t) => { const n = $('#toast'); n.textContent = t; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 1800); };
 const link = (label, href, cls) => { const a = el('a', 'btn' + (cls ? ' ' + cls : ''), label); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; };
 const button = (label, fn, cls) => { const b = el('button', 'btn' + (cls ? ' ' + cls : ''), label); b.type = 'button'; b.onclick = fn; return b; };
@@ -275,7 +280,7 @@ async function openSite(id) {
   sec1.append(el('p', 'sub', 'Posts from the last 30 days on Hacker News, Bluesky and GitHub that use your phrases. Open one, answer as yourself, then mark it.'));
   const kw = el('div', 'row'); const inp = el('input'); inp.value = s.keywords; inp.setAttribute('aria-label', 'Search phrases, comma separated');
   kw.append(inp, button('Save phrases', async () => { try { const j = await api('/api/sites/' + id + '/keywords', { keywords: inp.value }); inp.value = j.keywords; toast('Saved'); listenNow(); } catch (e) { toast(e.message); } }),
-    button('Find people now', listenNow, 'go'), link('Search Reddit', d.reddit));
+    button('Find people now', listenNow, 'go'), (() => { const a = link('Search Reddit', d.reddit); a.prepend(logo('reddit')); return a; })());
   sec1.append(kw, el('p', 'status', s.listened ? 'Last looked ' + ago(s.listened) + '.' : 'Not looked yet.'));
   const counts = { new: 0, replied: 0, skip: 0 }; d.leads.forEach((l) => { counts[l.status]++; });
   const f = el('div', 'tabs'); [['new', 'New'], ['replied', 'Replied'], ['skip', 'Skipped']].forEach(([k, label]) => { const b = button(label + ' ' + counts[k], () => { FILTER = k; openSite(id); }, FILTER === k ? 'on' : ''); f.append(b); });
@@ -284,7 +289,7 @@ async function openSite(id) {
   if (!shown.length) list.append(el('div', 'empty', FILTER === 'new' ? 'No new posts. Press Find people now, or try wider phrases.' : 'Nothing here yet.'));
   shown.forEach((l) => {
     const r = el('div', 'lead' + (l.status !== 'new' ? ' done' : ''));
-    const src = el('div', 'src', l.source); src.append(el('small', '', ago(l.at))); r.append(src);
+    const src = named('div', 'src', l.source); src.append(el('small', '', ago(l.at))); r.append(src);
     const mid = el('div'); if (l.title) mid.append(el('h3', '', l.title)); mid.append(el('p', '', l.text));
     const who = el('div', 'who'); if (l.author_url) { const a = el('a', '', l.author); a.href = l.author_url; a.target = '_blank'; a.rel = 'noopener'; who.append(a); } else who.textContent = l.author; mid.append(who); r.append(mid);
     const acts = el('div', 'acts'); acts.append(link('Open and reply', l.url, 'go'));
@@ -302,7 +307,7 @@ async function openSite(id) {
   ME.listings.forEach((p) => {
     const cur = have[p.name] || { status: 'todo', link: '' };
     const r = el('div', 'lst' + (cur.status === 'live' ? ' live' : ''));
-    const a = el('a', '', p.name); a.href = cur.link || p.url; a.target = '_blank'; a.rel = 'noopener'; a.title = p.why;
+    const a = named('a', '', p.name, p.url); a.href = cur.link || p.url; a.target = '_blank'; a.rel = 'noopener'; a.title = p.why;
     const sel = el('select'); sel.setAttribute('aria-label', 'Status on ' + p.name);
     [['todo', 'To do'], ['submitted', 'Submitted'], ['live', 'Live']].forEach(([v, t]) => { const o = el('option', '', t); o.value = v; if (v === cur.status) o.selected = true; sel.append(o); });
     const li = el('input'); li.placeholder = 'Link to your listing'; li.value = cur.link || ''; li.setAttribute('aria-label', 'Listing link on ' + p.name);
@@ -317,7 +322,7 @@ async function openSite(id) {
   const jr = el('div', 'acts');
   jr.append(button('Post as jobs', async (ev) => { ev.target.disabled = true; try { const j = await api('/api/sites/' + id + '/jobs', {}); toast(j.note || (j.posted.length + ' jobs posted')); openSite(id); } catch (e) { toast(e.message); ev.target.disabled = false; } }, 'go'));
   secJ.append(jr);
-  (d.jobs || []).forEach((j) => { const r = el('div', 'lst'); r.append(link(j.title, j.link), el('small', '', 'posted ' + ago(j.at))); secJ.append(r); });
+  (d.jobs || []).forEach((j) => { const r = el('div', 'lst'); const jl = link(j.title, j.link); jl.prepend(logo('', j.link)); r.append(jl, el('small', '', 'posted ' + ago(j.at))); secJ.append(r); });
   box.append(secJ);
 
   const sec3 = el('section'); sec3.append(el('h2', '', 'This site'));
