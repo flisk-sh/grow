@@ -82,3 +82,22 @@ describe('routes', () => {
     expect(s.modelCalls()).toBe(0);
   });
 });
+
+describe('slow model', () => {
+  test('a model timeout returns a readable 504 and stores no plan', async () => {
+    const timeout = async () => { const e = new Error('The operation timed out.'); e.name = 'TimeoutError'; throw e; };
+    const s = setup({ INFERENCE: { fetch: timeout } });
+    const r = await s.post('https://example.com/');
+    expect(r.status).toBe(504);
+    const j = await r.json();
+    expect(j.error).toBe('The model took too long to answer. Press the button again in a minute.');
+    expect(j.id).toBeUndefined();
+  });
+
+  test('the page guards the button and survives a non-JSON error', async () => {
+    const html = await (await setup().get('/')).text();
+    expect(html).toContain('go.disabled = true');
+    expect(html).toContain('AbortSignal.timeout(100000)');
+    expect(html).toContain('r.json().catch(');
+  });
+});

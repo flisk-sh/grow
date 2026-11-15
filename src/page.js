@@ -148,8 +148,9 @@ async function make(ev) {
   go.disabled = true; let i = 0; st.textContent = STEPS[0] + '...';
   const tick = setInterval(() => { i = Math.min(i + 1, STEPS.length - 1); st.textContent = STEPS[i] + '...'; }, 4000);
   try {
-    const r = await fetch('/api/plan', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) });
-    const j = await r.json();
+    const r = await fetch('/api/plan', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }), signal: AbortSignal.timeout(100000) })
+      .catch((e) => { throw new Error(e.name === 'TimeoutError' ? 'The plan took too long. Press the button again in a minute.' : 'Could not reach the server. Check your connection and press the button again.'); });
+    const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'Something went wrong. Press the button again.');
     history.pushState(null, '', '/p/' + j.id);
     st.textContent = j.reused ? 'This link got a plan today already; here it is.' : 'Done. The plan is below.';

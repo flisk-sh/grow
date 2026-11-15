@@ -97,12 +97,17 @@ export function cleanPlan(i) {
 export async function makePlan(url, { fetch: fetchImpl, model, citable, key }) {
   const [page, check] = await Promise.all([readPage(url, fetchImpl), checkCitable(url, citable || fetchImpl)]);
   const about = page ? `Title: ${page.title}\nDescription: ${page.desc}\nText: ${page.body}` : '(the page could not be read)';
-  const r = await model('https://inference.flisk.si/v1/chat/completions', {
+  let r;
+  try {
+    r = await model('https://inference.flisk.si/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
     body: JSON.stringify({ model: MODEL, temperature: 0.4, max_tokens: 2048, messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: `Link: ${url}\n${about}` }] }),
     signal: AbortSignal.timeout(60000),
   });
+  } catch (e) {
+    return { error: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'timeout' : 'model', message: str(e?.message, 300) || 'model call failed' };
+  }
   const j = await r.json().catch(() => null);
   if (!r.ok) {
     const msg = str(j?.error?.message, 300);

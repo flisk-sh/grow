@@ -76,6 +76,7 @@ export async function handle(req, env, deps = {}) {
     const model = env.INFERENCE ? (u, init) => env.INFERENCE.fetch(u, init) : fetchImpl;
     const citable = env.CITABLE ? (u, init) => env.CITABLE.fetch(u, init) : fetchImpl;
     const out = await makePlan(link, { fetch: fetchImpl, model, citable, key: env.INFERENCE_KEY });
+    if (out.error === 'timeout') return json(504, { error: 'The model took too long to answer. Press the button again in a minute.' });
     if (out.error === 'busy') return json(429, { error: 'The free model is out of its daily budget. Come back tomorrow (00:00 UTC).' });
     if (out.error) return json(502, { error: 'The model did not give a usable plan. Press the button again.', detail: out.message });
 

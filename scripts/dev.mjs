@@ -21,7 +21,8 @@ const plan = {
   ],
 };
 const f = fakeFetch({ model: plan });
-const slow = async (u, i) => { await new Promise((r) => setTimeout(r, 1500)); return f(u, i); };
+const slow = async (u, i) => {
+  if (process.env.MODEL_TIMEOUT) { const e = new Error('The operation timed out.'); e.name = 'TimeoutError'; throw e; } await new Promise((r) => setTimeout(r, Number(process.env.SLOW_MS) || 1500)); return f(u, i); };
 const env = { DB: fakeD1(), INFERENCE_KEY: 'dev', INFERENCE: { fetch: slow }, CITABLE: { fetch: f } };
 const deps = { fetch: f, cache: fakeCache() };
 const port = Number(process.env.PORT) || 8819;
