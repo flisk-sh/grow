@@ -4,7 +4,7 @@
 
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-export const CSS = String.raw`.logo{width:16px;height:16px;vertical-align:-3px;margin-right:6px;border-radius:3px;flex:none;background:#fff;padding:1px;box-sizing:border-box}
+export const CSS = String.raw`.gaps{margin-top:18px;padding-top:14px;border-top:1px solid var(--line,#333)}.gaps h3{margin:0 0 6px}.gaps .btn{margin:6px 8px 0 0}.logo{width:16px;height:16px;vertical-align:-3px;margin-right:6px;border-radius:3px;flex:none;background:#fff;padding:1px;box-sizing:border-box}
 :root{--bg:#eeece5;--bg2:#e5e2d9;--panel:#f6f4ee;--panel2:#e8e5dc;--ink:#121212;--mut:#3d3d42;--faint:#6a6a70;--line:rgba(18,18,18,.13);--line2:rgba(18,18,18,.82);
 --acc:#22c55e;--accink:#04120a;--acctext:#137a3a;--tint:rgba(34,197,94,.12);--red:#be123c;--amber:#9a5300;
 --display:"Fraunces",Georgia,"Times New Roman",serif;--font:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color-scheme:light}
@@ -97,7 +97,21 @@ function draw(id, plan) {
   const share = el('div', 'share');
   const here = location.origin + '/p/' + id;
   share.append(button('Save to my cabinet', () => fetch('/me').then(() => fetch('/api/sites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: plan.url, plan: id }) })).then((r) => r.json()).then((j) => { location.href = '/me?site=' + j.id; })), button('Copy link to this plan', () => copy(here)), link('Open the site', plan.url), el('span', '', 'Kept 30 days: ' + here));
-  head.append(share); out.append(head);
+  head.append(share);
+  const gap = el('div', 'gaps');
+  gap.append(el('h3', '', 'Get the gaps done'), el('p', '', 'Posts the checks a bot really does to jobs.flisk.si: can AI search find your site, and how good is your README (when the site links its GitHub repo). A bot takes them within about 5 minutes. Free and public.'));
+  const gres = el('div'); const gb = button('Post as jobs on jobs.flisk.si', async () => {
+    gb.disabled = true; gb.textContent = 'Posting...';
+    try {
+      await fetch('/me'); const a = await fetch('/api/sites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: plan.url, plan: id }) }).then((r) => r.json());
+      const j = await fetch('/api/sites/' + a.id + '/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((r) => r.json());
+      if (j.error) throw new Error(j.error);
+      gres.replaceChildren(); (j.posted.length ? j.posted : []).forEach((x) => { const l = link(x.title, x.link, 'go'); gres.append(l); });
+      if (!j.posted.length) { gres.append(el('p', 'note', j.note || 'Nothing to post.'), link('See them in my cabinet', '/me?site=' + a.id)); } else gres.append(link('See all in my cabinet', '/me?site=' + a.id));
+      gb.textContent = 'Posted'; toast('Posted');
+    } catch (e) { gb.disabled = false; gb.textContent = 'Post as jobs on jobs.flisk.si'; toast(e.message); }
+  }, 'go');
+  gap.append(gb, gres); head.append(gap); out.append(head);
 
   const c = section('Can AI search find it', 'ChatGPT, Claude and Perplexity answer from pages they can read. Citable checks yours.');
   if (plan.check) {
