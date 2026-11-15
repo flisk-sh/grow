@@ -6,6 +6,7 @@
     "test": "bun test",
     "dev": "bun scripts/dev.mjs",
     "deploy": "bunx wrangler@4 deploy",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git config core.hooksPath .githooks",
+    "e2e": "bun scripts/e2e-live.mjs"
   }
 }

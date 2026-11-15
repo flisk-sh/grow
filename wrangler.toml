@@ -7,8 +7,8 @@ compatibility_date = "2026-11-01"
 
 [vars]
 # Each plan is one chat call (about 70 neurons) on the daily budget shared with chat.flisk.si.
-PLANS_PER_VISITOR = "3"
-PLANS_PER_DAY = "20"
+PLANS_PER_VISITOR = "10"
+PLANS_PER_DAY = "50"
 
 [[services]]
 binding = "INFERENCE"
