@@ -38,7 +38,7 @@ export async function searchBluesky(q, since, fetchImpl) {
       source: 'Bluesky',
       url: `https://bsky.app/profile/${handle}/post/${String(p.uri || '').split('/').pop()}`,
       title: '',
-      text: clip(p.record?.text, 400),
+      text: clip([p.record?.text, p.record?.embed?.external?.title, p.record?.embed?.external?.uri].filter(Boolean).join(' '), 400),
       author: clip(p.author?.displayName || handle, 60),
       author_url: `https://bsky.app/profile/${handle}`,
       at: Date.parse(p.record?.createdAt || p.indexedAt) || 0,
@@ -78,7 +78,7 @@ export function notOwn(lead, { authors = [], owners = [] } = {}) {
 }
 
 // All sources for all keywords, newest first, one row per post. Sources that fail just give nothing.
-export async function listen(keywords, { fetch: fetchImpl, days = 14, now = Date.now(), exclude = {} } = {}) {
+export async function listen(keywords, { fetch: fetchImpl, days = 30, now = Date.now(), exclude = {} } = {}) {
   const since = now - days * 864e5;
   const runs = keywords.flatMap((q) => [searchHN(q, since, fetchImpl), searchBluesky(q, since, fetchImpl), searchGitHub(q, since, fetchImpl)]);
   const seen = new Set();

@@ -4,6 +4,7 @@
 import { httpUrl, LISTINGS } from './plan.js';
 import { listen, mentions, notOwn, parseKeywords, redditSearch } from './listen.js';
 import { CSS } from './page.js';
+import { findListings } from './found.js';
 
 const COOKIE = 'grow_s';
 const YEAR = 365 * 864e5;
@@ -146,7 +147,13 @@ export async function cabinet(req, env, deps = {}) {
       if (wait <= 0) {
         const me = uid.startsWith('gh_') ? await env.DB.prepare('SELECT login FROM users WHERE id = ?').bind(uid).first() : null;
         const name = (() => { try { return new URL(site.url).hostname.replace(/^www\./, '').split('.')[0]; } catch { return ''; } })();
-        const found = await listen(parseKeywords(site.keywords), { fetch: fetchImpl, exclude: { authors: [me?.login], owners: [name, me?.login] } });
+        const [found, listed] = await Promise.all([
+          listen(parseKeywords(site.keywords), { fetch: fetchImpl, exclude: { authors: [me?.login], owners: [name, me?.login] } }),
+          findListings(site.url, { fetch: fetchImpl }),
+        ]);
+        // A listing found on its own becomes Live, unless you already set it yourself.
+        if (listed.length) await env.DB.batch(listed.map((l) => env.DB.prepare("INSERT INTO listings (site_id, place, status, link, updated) VALUES (?, ?, 'live', ?, ?) ON CONFLICT(site_id, place) DO UPDATE SET status = 'live', link = excluded.link, updated = excluded.updated WHERE listings.status = 'todo' OR listings.link IS NULL OR listings.link = ''")
+          .bind(site.id, l.place, l.link, Date.now())));
         // Drop earlier unanswered leads that the stricter match would not keep.
         const { results: old } = await env.DB.prepare("SELECT url, source, title, text, author FROM leads WHERE site_id = ? AND status = 'new'").bind(site.id).all();
         const kws = parseKeywords(site.keywords), ex = { authors: [me?.login], owners: [name, me?.login] };
@@ -249,7 +256,7 @@ async function openSite(id) {
   const s = d.site;
 
   const sec1 = el('section'); sec1.append(el('h2', '', 'People talking about it'));
-  sec1.append(el('p', 'sub', 'Posts from the last 14 days on Hacker News, Bluesky and GitHub that use your phrases. Open one, answer as yourself, then mark it.'));
+  sec1.append(el('p', 'sub', 'Posts from the last 30 days on Hacker News, Bluesky and GitHub that use your phrases. Open one, answer as yourself, then mark it.'));
   const kw = el('div', 'row'); const inp = el('input'); inp.value = s.keywords; inp.setAttribute('aria-label', 'Search phrases, comma separated');
   kw.append(inp, button('Save phrases', async () => { try { const j = await api('/api/sites/' + id + '/keywords', { keywords: inp.value }); inp.value = j.keywords; toast('Saved'); listenNow(); } catch (e) { toast(e.message); } }),
     button('Find people now', listenNow, 'go'), link('Search Reddit', d.reddit));
@@ -274,12 +281,12 @@ async function openSite(id) {
   sec1.append(list); box.append(sec1);
 
   const sec2 = el('section'); sec2.append(el('h2', '', 'Where you listed it'));
-  sec2.append(el('p', 'sub', 'Each place a buyer might find you. Submit, then set the status and paste the link to your listing.'));
+  sec2.append(el('p', 'sub', 'Each place a buyer might find you. Find people now also looks for your listings on Hacker News, SaaSHub, Toolradar, Uneed and DevHunt and marks them Live. For the rest, submit, then set the status and paste the link.'));
   const have = {}; d.listings.forEach((x) => { have[x.place] = x; });
   ME.listings.forEach((p) => {
     const cur = have[p.name] || { status: 'todo', link: '' };
     const r = el('div', 'lst' + (cur.status === 'live' ? ' live' : ''));
-    const a = el('a', '', p.name); a.href = p.url; a.target = '_blank'; a.rel = 'noopener'; a.title = p.why;
+    const a = el('a', '', p.name); a.href = cur.link || p.url; a.target = '_blank'; a.rel = 'noopener'; a.title = p.why;
     const sel = el('select'); sel.setAttribute('aria-label', 'Status on ' + p.name);
     [['todo', 'To do'], ['submitted', 'Submitted'], ['live', 'Live']].forEach(([v, t]) => { const o = el('option', '', t); o.value = v; if (v === cur.status) o.selected = true; sel.append(o); });
     const li = el('input'); li.placeholder = 'Link to your listing'; li.value = cur.link || ''; li.setAttribute('aria-label', 'Listing link on ' + p.name);
