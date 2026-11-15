@@ -4,7 +4,7 @@
 
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-export const CSS = String.raw`.logo{width:16px;height:16px;vertical-align:-3px;margin-right:6px;border-radius:3px;flex:none}
+export const CSS = String.raw`.logo{width:16px;height:16px;vertical-align:-3px;margin-right:6px;border-radius:3px;flex:none;background:#fff;padding:1px;box-sizing:border-box}
 :root{--bg:#eeece5;--bg2:#e5e2d9;--panel:#f6f4ee;--panel2:#e8e5dc;--ink:#121212;--mut:#3d3d42;--faint:#6a6a70;--line:rgba(18,18,18,.13);--line2:rgba(18,18,18,.82);
 --acc:#22c55e;--accink:#04120a;--acctext:#137a3a;--tint:rgba(34,197,94,.12);--red:#be123c;--amber:#9a5300;
 --display:"Fraunces",Georgia,"Times New Roman",serif;--font:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color-scheme:light}
