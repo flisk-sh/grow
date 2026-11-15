@@ -2,7 +2,7 @@
 // you listed it. A visitor gets a cabinet in this browser at once (signed cookie); GitHub sign-in keeps it across
 // browsers and moves the browser's sites into the account. Nothing is posted or sent for anyone.
 import { httpUrl, LISTINGS } from './plan.js';
-import { listen, parseKeywords, redditSearch } from './listen.js';
+import { listen, mentions, notOwn, parseKeywords, redditSearch } from './listen.js';
 import { CSS } from './page.js';
 
 const COOKIE = 'grow_s';
@@ -144,12 +144,19 @@ export async function cabinet(req, env, deps = {}) {
       const wait = site.listened + LISTEN_EVERY_MS - Date.now();
       let added = 0;
       if (wait <= 0) {
-        const found = await listen(parseKeywords(site.keywords), { fetch: fetchImpl });
-        const stmts = found.map((l) => env.DB.prepare('INSERT OR IGNORE INTO leads (site_id, url, source, title, text, author, author_url, at, status, found) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'new\', ?)')
-          .bind(site.id, l.url, l.source, l.title, l.text, l.author, l.author_url, l.at, Date.now()));
+        const me = uid.startsWith('gh_') ? await env.DB.prepare('SELECT login FROM users WHERE id = ?').bind(uid).first() : null;
+        const name = (() => { try { return new URL(site.url).hostname.replace(/^www\./, '').split('.')[0]; } catch { return ''; } })();
+        const found = await listen(parseKeywords(site.keywords), { fetch: fetchImpl, exclude: { authors: [me?.login], owners: [name, me?.login] } });
+        // Drop earlier unanswered leads that the stricter match would not keep.
+        const { results: old } = await env.DB.prepare("SELECT url, source, title, text, author FROM leads WHERE site_id = ? AND status = 'new'").bind(site.id).all();
+        const kws = parseKeywords(site.keywords), ex = { authors: [me?.login], owners: [name, me?.login] };
+        const stale = (old || []).filter((l) => !mentions(l, kws) || !notOwn(l, ex));
+        const stmts = stale.map((l) => env.DB.prepare('DELETE FROM leads WHERE site_id = ? AND url = ?').bind(site.id, l.url));
+        stmts.push(...found.map((l) => env.DB.prepare('INSERT OR IGNORE INTO leads (site_id, url, source, title, text, author, author_url, at, status, found) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'new\', ?)')
+          .bind(site.id, l.url, l.source, l.title, l.text, l.author, l.author_url, l.at, Date.now())));
         stmts.push(env.DB.prepare('UPDATE sites SET listened = ? WHERE id = ?').bind(Date.now(), site.id));
         const res = await env.DB.batch(stmts);
-        added = res.slice(0, -1).reduce((s, r) => s + (r?.meta?.changes || 0), 0);
+        added = res.slice(stale.length, -1).reduce((s, r) => s + (r?.meta?.changes || 0), 0);
         // Keep the newest leads only.
         await env.DB.prepare('DELETE FROM leads WHERE site_id = ? AND url NOT IN (SELECT url FROM leads WHERE site_id = ? ORDER BY at DESC LIMIT ?)').bind(site.id, site.id, MAX_LEADS).run();
       }

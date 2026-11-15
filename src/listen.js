@@ -18,7 +18,7 @@ async function getJson(fetchImpl, url, headers = {}) {
 }
 
 export async function searchHN(q, since, fetchImpl) {
-  const j = await getJson(fetchImpl, `https://hn.algolia.com/api/v1/search_by_date?query=${encodeURIComponent(q)}&tags=(story,comment)&hitsPerPage=15&numericFilters=created_at_i>${Math.floor(since / 1000)}`);
+  const j = await getJson(fetchImpl, `https://hn.algolia.com/api/v1/search_by_date?query=${encodeURIComponent(q)}&tags=(story,comment)&hitsPerPage=30&typoTolerance=false&numericFilters=created_at_i>${Math.floor(since / 1000)}`);
   return (j?.hits || []).map((h) => ({
     source: 'Hacker News',
     url: `https://news.ycombinator.com/item?id=${h.objectID}`,
@@ -60,13 +60,30 @@ export async function searchGitHub(q, since, fetchImpl) {
   }));
 }
 
+// A post counts only when every word of one phrase is in it as a whole word. Search engines also return
+// near misses ("flisk" -> "flicker"), so this check runs on what comes back.
+const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export function mentions(lead, keywords) {
+  const hay = `${lead.title} ${lead.text}`.toLowerCase();
+  return keywords.some((k) => k.toLowerCase().split(' ').filter(Boolean).every((w) => new RegExp(`(^|[^\\p{L}\\p{N}])${esc(w)}($|[^\\p{L}\\p{N}])`, 'u').test(hay)));
+}
+
+// Your own posts and bots are not customers: drop authors you name, bots, and GitHub issues in repos
+// whose owner is one you name (or starts with it, so "flisk" also drops flisk-sh).
+export function notOwn(lead, { authors = [], owners = [] } = {}) {
+  const a = String(lead.author).toLowerCase();
+  if (/\[bot\]$|-bot$/.test(a) || authors.some((x) => x && x.toLowerCase() === a)) return false;
+  const owner = lead.source === 'GitHub' ? (/^https:\/\/github\.com\/([^/]+)\//.exec(lead.url)?.[1] || '').toLowerCase() : '';
+  return !(owner && owners.some((o) => o && (owner === o.toLowerCase() || owner.startsWith(`${o.toLowerCase()}-`))));
+}
+
 // All sources for all keywords, newest first, one row per post. Sources that fail just give nothing.
-export async function listen(keywords, { fetch: fetchImpl, days = 14, now = Date.now() } = {}) {
+export async function listen(keywords, { fetch: fetchImpl, days = 14, now = Date.now(), exclude = {} } = {}) {
   const since = now - days * 864e5;
   const runs = keywords.flatMap((q) => [searchHN(q, since, fetchImpl), searchBluesky(q, since, fetchImpl), searchGitHub(q, since, fetchImpl)]);
   const seen = new Set();
   return (await Promise.all(runs)).flat()
-    .filter((l) => l.url && l.at >= since && !seen.has(l.url) && seen.add(l.url))
+    .filter((l) => l.url && l.at >= since && mentions(l, keywords) && notOwn(l, exclude) && !seen.has(l.url) && seen.add(l.url))
     .sort((a, b) => b.at - a.at)
     .slice(0, 60);
 }
