@@ -46,3 +46,7 @@ bunx wrangler@4 deploy
 ```
 
 MIT license.
+
+## Git hooks
+
+`bun install` (or `bun run prepare`) turns on the hooks in `.githooks/`: pre-commit checks syntax and runs `bun test`, commit-msg needs a sign-off, and pre-push builds the Worker with `wrangler deploy --dry-run`.
