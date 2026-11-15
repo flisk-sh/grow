@@ -25,6 +25,8 @@ export const LISTINGS = [
   { name: 'Toolradar', why: 'A tool directory that AI assistants read.', url: 'https://toolradar.com/submit' },
   { name: 'Uneed', why: 'A daily launch list for new tools.', url: 'https://www.uneed.best/submit-a-tool' },
   { name: 'DevHunt', why: 'A launch list for developer tools.', url: 'https://devhunt.org/' },
+  { name: 'AIChief', why: 'An AI tools directory with a page per tool.', url: 'https://aichief.com/submit-tool/' },
+  { name: 'SourceForge', why: 'Mirrors your releases and lists the project for people browsing open source.', url: 'https://sourceforge.net/create/' },
 ];
 
 // The other free Flisk checks that help a launch.
