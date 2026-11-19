@@ -3,6 +3,7 @@ import { genericFollowers, httpUrl, makePlan, profileOf } from './plan.js';
 import { page } from './page.js';
 import { cabinet } from './cabinet.js';
 import { withSecurityHeaders } from './security-headers.js';
+import { TOUCH_ICON_PNG } from './touch-icon.js';
 import { sendTrace, traced } from './trace.js';
 
 const DAY_MS = 864e5;
@@ -45,6 +46,7 @@ async function route(req, env, deps = {}) {
   if (path === '/sitemap.xml') return new Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://grow.flisk.si/</loc></url></urlset>', { headers: { 'content-type': 'application/xml' } });
   if (path === '/llms.txt') return new Response(LLMS, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   if (path === '/icon.svg' || path === '/favicon.ico') return new Response(ICON, { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'max-age=86400' } });
+  if (path === '/apple-touch-icon.png') return new Response(TOUCH_ICON_PNG, { headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' } });
   if (path === '/health') return json(200, { ok: true });
   // A company's logo, fetched once and cached, so visitors' browsers only talk to grow.flisk.si.
   const lm = /^\/logo\/([a-z0-9.-]{3,80})$/.exec(path);

@@ -276,7 +276,7 @@ export function page({ planId = '', prefill = '' } = {}) {
 <title>Flisk Grow: find your first customers</title>
 <meta name="description" content="Paste a link to what you made. Get who would buy it, where they are, 5 email drafts, 3 post drafts, an AI search check and where to list it. Free, no sign-in.">
 <meta property="og:title" content="Flisk Grow: find your first customers"><meta property="og:description" content="Who would buy it, where they are, and what to send them. Free, no sign-in.">
-<link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="canonical" href="https://grow.flisk.si/">
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="canonical" href="https://grow.flisk.si/">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,700;9..144,800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>${CSS}</style>
