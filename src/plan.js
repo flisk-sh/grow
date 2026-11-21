@@ -27,6 +27,26 @@ export async function rankerFor(url, call) {
 export const CITABLE_URL = 'https://citable.flisk.si/api/check?url=';
 export const MODEL = 'flisk-wolf-chat';
 const MODEL_TIMEOUT_MS = 85000;
+// Grow's own model on Workers AI: Llama 3.1 8B fast writes one part of a plan in about 2 seconds for about 16 neurons,
+// where flisk-wolf-chat took 30-90 seconds and shared its daily budget with chat. PLANS_PER_DAY is grow's own budget.
+export const FAST_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
+
+// A fetch-like model call on the AI binding that answers like /v1/chat/completions. When the binding fails (the
+// account's daily allowance is used up, or the model is down) the call goes to `fallback` (inference.flisk.si) instead.
+export function workersAi(ai, fallback) {
+  return async (url, init) => {
+    const req = JSON.parse(init.body);
+    try {
+      const r = await ai.run(FAST_MODEL, { messages: req.messages, max_tokens: req.max_tokens, temperature: req.temperature });
+      const content = typeof r?.response === 'string' ? r.response : JSON.stringify(r?.response ?? '');
+      if (!content || content === '""') throw new Error('empty answer');
+      return Response.json({ model: FAST_MODEL, choices: [{ message: { role: 'assistant', content } }], usage: r.usage });
+    } catch (e) {
+      if (fallback) return fallback(url, init);
+      return Response.json({ error: { message: str(e?.message, 300) || 'model call failed' } }, { status: 503 });
+    }
+  };
+}
 
 const str = (v, max) => String(v ?? '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, max);
 // Email and post bodies keep their line breaks.

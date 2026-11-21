@@ -1,5 +1,5 @@
 // grow.flisk.si: paste a link, get a plan to find the first customers. No sign-in. Plans are kept 30 days at /p/<id>.
-import { cleanLinks, genericFollowers, githubRepo, httpUrl, makePlan, profileOf, rankerFor } from './plan.js';
+import { cleanLinks, genericFollowers, githubRepo, httpUrl, makePlan, profileOf, rankerFor, workersAi } from './plan.js';
 import { page } from './page.js';
 import { cabinet } from './cabinet.js';
 import { withSecurityHeaders } from './security-headers.js';
@@ -102,9 +102,10 @@ async function route(req, env, deps = {}) {
     if (await visitorCount(ip, false, cache) >= perVisitor) return json(429, { error: `You made ${perVisitor} plans today, the free limit. Come back tomorrow (00:00 UTC).` });
     const used = (await env.DB.prepare('SELECT n FROM days WHERE day = ?').bind(today()).first())?.n ?? 0;
     if (used >= perDay) return json(429, { error: `Today's ${perDay} free plans are made. Come back tomorrow (00:00 UTC).` });
-    if (!env.INFERENCE_KEY) return json(503, { error: 'The model is not set up on this server yet.' });
+    if (!env.INFERENCE_KEY && !env.AI) return json(503, { error: 'The model is not set up on this server yet.' });
 
-    const model = env.INFERENCE ? (u, init) => env.INFERENCE.fetch(u, init) : fetchImpl;
+    const inference = env.INFERENCE_KEY ? (env.INFERENCE ? (u, init) => env.INFERENCE.fetch(u, init) : fetchImpl) : null;
+    const model = env.AI ? workersAi(env.AI, inference) : inference;
     const citable = env.CITABLE ? (u, init) => env.CITABLE.fetch(u, init) : fetchImpl;
     const ranker = env.RANKER ? (u, init) => env.RANKER.fetch(u, init) : fetchImpl;
     // Every plan shown gets an id and a /p/<id> link to share, the general guide too. Only model-written plans count toward the day's limit.

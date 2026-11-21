@@ -7,9 +7,13 @@ compatibility_date = "2026-11-01"
 
 [vars]
 LOGIN_PUBLIC_KEY = "g_3cGlqaMDf4mM4Bgfv8EO6js7yW_bcSW7cOUpSwLc0"
-# Each plan is one chat call (about 70 neurons) on the daily budget shared with chat.flisk.si.
+# Each plan is three calls on Llama 3.1 8B fast through the AI binding below, about 50 neurons together, so 30 plans
+# use about 1,500 of the account's 10,000 free neurons a day. inference.flisk.si is only the fallback.
 PLANS_PER_VISITOR = "10"
-PLANS_PER_DAY = "50"
+PLANS_PER_DAY = "30"
+
+[ai]
+binding = "AI"
 
 [[services]]
 binding = "INFERENCE"

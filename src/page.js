@@ -511,8 +511,8 @@ function loader(on) {
     li.forEach((e) => { e.className = 'on'; });
     bar.style.width = Math.min(95, 100 * (1 - Math.exp(-s / 35))) + '%';
     sec.textContent = Math.floor(s) + ' s';
-    note.textContent = s > 40 ? 'The free model is slow right now. Keep this tab open; it can take up to 90 seconds.' : 'Usually 20 to 60 seconds.';
-    $('#status').textContent = s > 40 ? 'Still writing. The free model is slow right now; this can take up to 90 seconds.' : 'Working on all of it at once...';
+    note.textContent = s > 40 ? 'The model is slow right now. Keep this tab open; it can take up to 90 seconds.' : 'Usually 10 to 30 seconds.';
+    $('#status').textContent = s > 40 ? 'Still writing. The model is slow right now; this can take up to 90 seconds.' : 'Working on all of it at once...';
   };
   draw(); const t = setInterval(draw, 1000);
   return (ok) => { clearInterval(t); if (ok) { li.forEach((e) => { e.className = 'ok'; e.firstChild.textContent = '✓'; }); bar.style.width = '100%'; } setTimeout(() => { box.hidden = true; }, ok ? 600 : 0); };
