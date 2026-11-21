@@ -27,6 +27,19 @@ describe('routes', () => {
     expect(t).toContain('Disallow: /*?');
   });
 
+  test('robots.txt and sitemap.xml are cacheable for a day with unchanged bodies', async () => {
+    const s = setup();
+    const robots = await s.get('/robots.txt');
+    expect(robots.headers.get('cache-control')).toBe('public, max-age=86400');
+    expect(robots.headers.get('content-type')).toBe('text/plain');
+    expect(await robots.text()).toContain('Sitemap: https://grow.flisk.si/sitemap.xml');
+
+    const sitemap = await s.get('/sitemap.xml');
+    expect(sitemap.headers.get('cache-control')).toBe('public, max-age=86400');
+    expect(sitemap.headers.get('content-type')).toBe('application/xml');
+    expect(await sitemap.text()).toContain('<loc>https://grow.flisk.si/</loc>');
+  });
+
   test('?url= only fills the box and never calls the model', async () => {
     const s = setup();
     const r = await s.get('/?url=' + encodeURIComponent('https://a.com/"><script>'));

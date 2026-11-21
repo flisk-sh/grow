@@ -6,6 +6,8 @@ import { withSecurityHeaders } from './security-headers.js';
 import { sendTrace, traced } from './trace.js';
 
 const DAY_MS = 864e5;
+// Static crawler files: a day of browser/CDN caching saves a Worker invocation on every crawl.
+const STATIC_CACHE = 'public, max-age=86400';
 const json = (status, body, extra = {}) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'access-control-allow-origin': '*', ...extra } });
 const html = (body, extra = {}) => new Response(body, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://flisk.si https://flisk.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://flisk.si; font-src https://fonts.gstatic.com; img-src 'self' data: https://flisk.si; connect-src 'self' https://flisk.si https://*.flisk.si https://flisk.sh; frame-ancestors 'none'", ...extra } });
 const today = () => new Date().toISOString().slice(0, 10);
@@ -41,8 +43,8 @@ async function route(req, env, deps = {}) {
   const cache = deps.cache === undefined ? globalThis.caches?.default : deps.cache;
 
   if (req.method === 'OPTIONS') return new Response(null, { headers: { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' } });
-  if (path === '/robots.txt') return new Response(ROBOTS, { headers: { 'content-type': 'text/plain' } });
-  if (path === '/sitemap.xml') return new Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://grow.flisk.si/</loc></url></urlset>', { headers: { 'content-type': 'application/xml' } });
+  if (path === '/robots.txt') return new Response(ROBOTS, { headers: { 'content-type': 'text/plain', 'cache-control': STATIC_CACHE } });
+  if (path === '/sitemap.xml') return new Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://grow.flisk.si/</loc></url></urlset>', { headers: { 'content-type': 'application/xml', 'cache-control': STATIC_CACHE } });
   if (path === '/llms.txt') return new Response(LLMS, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   if (path === '/icon.svg' || path === '/favicon.ico') return new Response(ICON, { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'max-age=86400' } });
   if (path === '/health') return json(200, { ok: true });
