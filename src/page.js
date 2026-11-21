@@ -294,6 +294,7 @@ export function page({ planId = '', prefill = '', share = null } = {}) {
 <div class="wrap">
 <header class="nav"><a class="brand" href="/"><img src="/icon.svg" alt="">Flisk Grow</a>
 <nav class="navr"><a href="/me">My cabinet</a><a href="#api" class="hide-s">API</a><a href="https://github.com/flisk-sh/grow" class="hide-s">GitHub</a><a href="https://flisk.si">More from Flisk</a></nav></header>
+<main>
 <div class="hero"><div>
 <div class="kicker">Beta · free · no sign-in</div>
 <h1>Find your first customers.</h1>
@@ -327,6 +328,7 @@ export function page({ planId = '', prefill = '', share = null } = {}) {
   -d '{"url": "https://your-site.com"}'</pre>
 <p class="note">Answers {"id", "plan"}. Read a saved plan with GET /api/plan/&lt;id&gt;.</p></section>
 </div>
+</main>
 <footer><span>Flisk Grow · beta</span><a href="https://flisk.si">flisk.si</a><a href="https://github.com/flisk-sh/grow">Source</a><a href="/llms.txt">llms.txt</a></footer>
 </div>
 <div id="toast" class="toast" role="status"></div>
