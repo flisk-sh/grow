@@ -8,14 +8,14 @@ export const BASELINE = {
 };
 
 // Adds what is missing; a header the route already set is never duplicated or overwritten. A CSP the response has is kept
-// (the home page sets its own, with frame-ancestors 'none'); one without frame-ancestors gets frame-ancestors 'self', and a
+// (the home page sets its own, with frame-ancestors 'none'); one without frame-ancestors gets frame-ancestors 'self' https://analytics.flisk.si, and a
 // response with no CSP gets only that directive, so no script or style rule can break a page.
 export function withSecurityHeaders(res) {
   // Headers of a Response from a fetch, a cache or Response.redirect() can be immutable: copy into a new Response.
   const out = new Response(res.body, res);
   for (const [name, value] of Object.entries(BASELINE)) if (!out.headers.has(name)) out.headers.set(name, value);
   const csp = out.headers.get('content-security-policy');
-  if (csp === null) out.headers.set('content-security-policy', "frame-ancestors 'self'");
-  else if (!/frame-ancestors/i.test(csp)) out.headers.set('content-security-policy', `${csp}; frame-ancestors 'self'`);
+  if (csp === null) out.headers.set('content-security-policy', "frame-ancestors 'self' https://analytics.flisk.si");
+  else if (!/frame-ancestors/i.test(csp)) out.headers.set('content-security-policy', `${csp}; frame-ancestors 'self' https://analytics.flisk.si`);
   return out;
 }

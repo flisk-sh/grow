@@ -58,12 +58,12 @@ describe('withSecurityHeaders', () => {
   test('copies a response with immutable headers', () => {
     const r = withSecurityHeaders(Response.redirect('https://a.test/', 302));
     for (const [k, v] of Object.entries(BASELINE)) expect(r.headers.get(k)).toBe(v);
-    expect(r.headers.get('content-security-policy')).toBe("frame-ancestors 'self'");
+    expect(r.headers.get('content-security-policy')).toBe("frame-ancestors 'self' https://analytics.flisk.si");
   });
 
   test('adds frame-ancestors to a CSP without one and leaves other headers alone', () => {
     const r = withSecurityHeaders(new Response('x', { headers: { 'content-security-policy': "default-src 'self'", 'x-frame-options': 'DENY' } }));
-    expect(r.headers.get('content-security-policy')).toBe("default-src 'self'; frame-ancestors 'self'");
+    expect(r.headers.get('content-security-policy')).toBe("default-src 'self'; frame-ancestors 'self' https://analytics.flisk.si");
     expect(r.headers.get('x-frame-options')).toBe('DENY');
   });
 });
