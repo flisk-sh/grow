@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { cleanFollowers, cleanPlan, httpUrl, makePlan, parseJson, profileOf, readPage } from '../src/plan.js';
+import { cleanFollowers, cleanLinks, cleanPlan, httpUrl, linkKind, makePlan, parseJson, profileLinks, profileOf, readPage } from '../src/plan.js';
 import { MODEL_PLAN, fakeFetch } from './fixtures.js';
 
 describe('plan', () => {
@@ -36,16 +36,69 @@ describe('plan', () => {
     expect(p.body).toBe('Hello & welcome');
   });
 
+  test('links: kinds by host, twelve at most, no repeats, no main link', () => {
+    expect(linkKind('https://github.com/acme/tool')).toBe('GitHub');
+    expect(linkKind('https://twitter.com/acme')).toBe('X');
+    expect(linkKind('https://docs.acme.com/')).toBe('Other');
+    expect(cleanLinks(['https://a.com/', 'https://www.github.com/acme', 'https://github.com/acme/', 'javascript:x', 'nope'], 'https://a.com')).toEqual(['https://www.github.com/acme']);
+    expect(cleanLinks(Array.from({ length: 20 }, (_, i) => 'https://s' + i + '.com/'))).toHaveLength(12);
+    expect(cleanLinks('https://a.com/')).toEqual([]);
+    expect(cleanLinks(['https://www.producthunt.com/products/flisk?embed=true&utm_source=badge-featured&utm_medium=badge', 'https://www.youtube.com/watch?v=abc&si=x', 'https://x.com/acme?s=20'])).toEqual(['https://www.producthunt.com/products/flisk', 'https://www.youtube.com/watch?v=abc', 'https://x.com/acme']);
+    expect(cleanLinks(['https://github.com/flisk-sh/flisk/blob/main/LICENSE', 'https://github.com/flisk-sh/flisk', 'https://github.com/features'])).toEqual(['https://github.com/flisk-sh/flisk', 'https://github.com/features']);
+  });
+
+  test('a page gives its profile links, not share buttons', () => {
+    const html = '<a href="https://github.com/acme/tool">gh</a><a href="https://x.com/intent/post?text=hi">share</a><a href="https://x.com/acme">x</a><a href="https://example.com/blog">blog</a><a href="https://www.linkedin.com/">li</a><a href="https://github.com/acme/other">gh2</a>';
+    expect(profileLinks(html, 'https://acme.com/')).toEqual(['https://github.com/acme/tool', 'https://x.com/acme']);
+  });
+
+  test('links to adopters and contributors in the page body are not the maker\'s', () => {
+    const html = '<nav><a href="https://discord.gg/qMu5Xn8Kaq">chat</a></nav><a href="https://github.com/AK-Lmn">contributor</a>'
+      + '<a href="https://www.linkedin.com/company/lekast/">adopter</a><a href="https://github.com/flisk-sh/flisk/blob/main/LICENSE">license</a>'
+      + '<footer><a href="https://x.com/someone">x</a></footer>';
+    expect(profileLinks(html, 'https://flisk.sh/')).toEqual(['https://discord.gg/qMu5Xn8Kaq', 'https://github.com/flisk-sh/flisk', 'https://x.com/someone']);
+  });
+
+  test('makePlan reads the maker\'s links and keeps them in the plan', async () => {
+    const page = fakeFetch(), model = fakeFetch();
+    const out = await makePlan('https://a.com/', { fetch: page, model, citable: fakeFetch(), key: 'k', links: ['https://github.com/acme/tool', 'https://a.com/'] });
+    expect(out.plan.links).toEqual(['https://github.com/acme/tool']);
+    expect(out.links).toBeUndefined();
+    expect(JSON.parse(model.calls[0].init.body).messages[1].content).toContain("The maker's other pages: GitHub https://github.com/acme/tool");
+    const busy = await makePlan('https://a.com/', { fetch: page, model: fakeFetch({ modelStatus: 429, modelError: 'Daily budget used' }), citable: fakeFetch(), key: 'k', links: ['https://x.com/acme'] });
+    expect(busy.fallback.links).toEqual(['https://x.com/acme']);
+  });
+
   test('makePlan calls the model and Citable through the given functions', async () => {
     const page = fakeFetch(), model = fakeFetch(), citable = fakeFetch();
     const out = await makePlan('https://a.com/', { fetch: page, model, citable, key: 'k1' });
     expect(out.plan.check).toMatchObject({ score: 62, grade: 'C', report: 'https://citable.flisk.si/a.com' });
     expect(out.plan.check.fixes).toHaveLength(1);
+    expect(out.plan.check.fixes[0].status).toBe('fail');
     expect(out.plan.listings.length).toBeGreaterThan(5);
     expect(model.calls[0].init.headers.authorization).toBe('Bearer k1');
     expect(JSON.parse(model.calls[0].init.body).model).toBe('flisk-wolf-chat');
     expect(citable.calls[0].url).toContain('citable.flisk.si/api/check');
     expect(page.calls.every((c) => !c.url.includes('inference'))).toBe(true);
+  });
+
+  test('makePlan asks for the plan, the emails and the posts in three calls and joins them', async () => {
+    const model = fakeFetch();
+    const out = await makePlan('https://a.com/', { fetch: fakeFetch(), model, citable: fakeFetch(), key: 'k' });
+    const sys = model.calls.map((c) => JSON.parse(c.init.body).messages[0].content);
+    expect(sys).toHaveLength(3);
+    expect(sys.some((t) => t.includes('"posts"') && !t.includes('"places"') && !t.includes('"emails"'))).toBe(true);
+    expect(sys.some((t) => t.includes('"emails"') && !t.includes('"places"'))).toBe(true);
+    expect(out.plan.emails.length).toBeGreaterThan(0);
+    expect(out.plan.places.length).toBeGreaterThan(0);
+  });
+
+  test('a plan lists communities that allow self-promotion and keeps a Discord draft', async () => {
+    const model = fakeFetch({ model: { ...MODEL_PLAN, posts: [{ where: 'Discord', title: 'Show', body: 'Hi all' }] } });
+    const out = await makePlan('https://a.com/', { fetch: fakeFetch(), model, citable: fakeFetch(), key: 'k' });
+    expect(out.plan.posts[0].where).toBe('Discord');
+    expect(out.plan.promo.some((x) => x.url === 'https://discord.com/channels/1562937840071999538/1569404291196915904')).toBe(true);
+    expect(out.plan.promo.filter((x) => x.where === 'Reddit').length).toBeGreaterThan(2);
   });
 
   test('makePlan reports a used-up budget as busy', async () => {
