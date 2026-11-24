@@ -428,7 +428,7 @@ export default function App() {
   useEffect(() => {
     if (!id || plan || me) return;
     let live = true;
-    fetch('/api/plan/' + id).then((r) => r.json()).then((j) => { if (!live) return; if (j.error) setError(j.error); else setPlan(j.plan); }).catch(() => live && setError(t('loadFail')));
+    fetch('/api/plan/' + encodeURIComponent(id)).then((r) => r.json()).then((j) => { if (!live) return; if (j.error) setError(j.error); else setPlan(j.plan); }).catch(() => live && setError(t('loadFail')));
     return () => { live = false; };
   }, [id, plan]);
   const onPlan = (newId, p) => { if (newId) history.pushState(null, '', PREFIX + '/p/' + newId); setId(newId || 'guide'); setPlan(p); };
