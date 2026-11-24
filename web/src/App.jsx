@@ -44,7 +44,8 @@ const mailto = (e) => 'mailto:?subject=' + enc(e.subject) + '&body=' + enc(e.bod
 const withScheme = (t) => { const v = String(t || '').trim(); return v && !/^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? 'https://' + v : v; };
 const planLink = (id) => location.origin + (id === 'example' ? '/example' : id ? '/p/' + id : '/');
 const BSKY = (n) => n === 'Bluesky';
-const POST = (t, n) => (BSKY(n) ? 'https://bsky.app/intent/compose?text=' : 'https://x.com/intent/post?text=') + enc(t);
+// Instagram has no "write a post" link, so its button opens Instagram and the text is copied beside it.
+const POST = (t, n) => n === 'Instagram' ? 'https://www.instagram.com/' : (BSKY(n) ? 'https://bsky.app/intent/compose?text=' : 'https://x.com/intent/post?text=') + enc(t);
 function postHref(x, plan) {
   const body = (x.body || x.title || '') + ' ' + plan.url;
   if (x.where === 'X') return 'https://x.com/intent/post?text=' + enc(body);
@@ -322,8 +323,8 @@ function PlanView({id, plan, onPlan}) {
 // ---------- home ----------
 const URL_HINTS = ['https://your-site.com', 'https://github.com/you/your-repo', 'https://your-app.vercel.app', 'https://producthunt.com/products/your-product', 'https://bsky.app/profile/you.bsky.social', 'https://your-shop.com'];
 const HIST_KEY = 'grow:recent-urls';
-const loadRecent = () => { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(a) ? a.filter((x) => typeof x === 'string').slice(0, 5) : []; } catch { return []; } };
-const saveRecent = (u) => { const n = [u, ...loadRecent().filter((x) => x !== u)].slice(0, 5); try { localStorage.setItem(HIST_KEY, JSON.stringify(n)); } catch { /* storage blocked */ } return n; };
+const loadRecent = () => { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(a) ? a.filter((x) => typeof x === 'string').slice(0, 10) : []; } catch { return []; } };
+const saveRecent = (u) => { const n = [u, ...loadRecent().filter((x) => x !== u)].slice(0, 10); try { localStorage.setItem(HIST_KEY, JSON.stringify(n)); } catch { /* storage blocked */ } return n; };
 // Cycles the placeholder every 2 seconds so a visitor sees the kinds of links that work.
 function useRotatingHint(list, ms = 2000) {
   const [i, setI] = useState(0);
@@ -340,6 +341,8 @@ function Home({onPlan}) {
   const [tick, setTick] = useState(0);
   const [recent, setRecent] = useState(loadRecent);
   const hint = useRotatingHint(URL_HINTS);
+  // TextInput has no `list` prop, so attach the native <datalist> to its input directly.
+  useEffect(() => { const el = document.querySelector('input[name="url"]'); if (el) el.setAttribute('list', 'grow-recent-urls'); }, []);
   useEffect(() => { if (!busy) return undefined; setTick(0); const t = setInterval(() => setTick((n) => n + 1), 3500); return () => clearInterval(t); }, [busy]);
   const make = async (e) => {
     e && e.preventDefault(); setErr('');
@@ -358,13 +361,14 @@ function Home({onPlan}) {
       <Heading level={1}>Find your first customers.</Heading>
       <Text color="secondary" type="lead">Paste a link to what you made. Get who would buy it, where they are, emails and posts to send, whether AI search can read your page, and where to list it.</Text>
       <form onSubmit={make}><VStack gap={2}>
+        <datalist id="grow-recent-urls">{recent.map((r) => <option key={r} value={r} />)}</datalist>
         <div className="url-row">
           <div className="url-field"><TextInput label="Link to your site" isLabelHidden type="url" htmlName="url" autoComplete="url" value={url} onChange={setUrl} placeholder={hint} startIcon={ic(LinkIcon)} size="lg" /></div>
           <Button label="Paste" variant="secondary" size="lg" icon={ic(ClipboardDocumentIcon)} onClick={paste} type="button" />
         </div>
         {recent.length > 0 && <HStack gap={1} wrap="wrap" justify="center" align="center">
           <Text type="supporting" color="secondary">Recent:</Text>
-          {recent.map((r) => <Button key={r} label={clip(r.replace(/^https?:\/\//, ''), 32)} variant="ghost" size="sm" type="button" onClick={() => setUrl(r)} />)}
+          {recent.slice(0, 5).map((r) => <Button key={r} label={clip(r.replace(/^https?:\/\//, ''), 32)} variant="ghost" size="sm" type="button" onClick={() => setUrl(r)} />)}
         </HStack>}
         <TextInput label="What is it about (optional)" isLabelHidden value={about} onChange={setAbout} placeholder="Optional: one line on who it is for" startIcon={ic(PencilSquareIcon)} />
         <HStack gap={2} justify="center" wrap="wrap">
@@ -379,9 +383,12 @@ function Home({onPlan}) {
         <Text type="supporting" color="secondary">About 20 seconds.</Text>
       </VStack></Card>}
       <HStack gap={2} wrap="wrap" justify="center">
-        {['Hacker News', 'Reddit', 'Product Hunt', 'X', 'Bluesky'].map((n) => <Badge key={n} label={n} icon={lg(n)} />)}
+        {['Hacker News', 'Reddit', 'Product Hunt', 'X', 'Bluesky', 'Instagram'].map((n) => <Badge key={n} label={n} icon={lg(n)} />)}
       </HStack>
-      <Text type="supporting" color="secondary">Followers plan for a profile: paste an <Names text="X" /> or <Names text="Bluesky" /> profile link.</Text>
+      <HStack gap={2} wrap="wrap" justify="center">
+        {['LinkedIn', 'YouTube', 'TikTok'].map((n) => <Badge key={n} label={n + ' · coming soon'} icon={lg(n)} />)}
+      </HStack>
+      <Text type="supporting" color="secondary">Followers plan for a profile: paste an <Names text="X" />, <Names text="Bluesky" /> or <Names text="Instagram" /> profile link.</Text>
     </VStack></div>
   );
 }
@@ -434,6 +441,9 @@ export default function App() {
           : plan ? <PlanView key={id} id={id === 'guide' ? '' : id} plan={plan} onPlan={setPlan} />
           : <Home onPlan={onPlan} />}
       </div>
+      <a className="pro-fab" href="https://chat.flisk.si" target="_blank" rel="noopener" title="Open Flisk Chat to get a deeper, customised plan with AI">
+        <Logo name="chat.flisk.si" url="https://chat.flisk.si" size={20} /><span>Get an advanced AI plan</span>
+      </a>
     </AppShell>
   );
 }

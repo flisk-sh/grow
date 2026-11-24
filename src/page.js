@@ -382,8 +382,8 @@ function planName(u) {
 }
 
 const BSKY = (n) => n === 'Bluesky';
-const XQ = (q, n) => BSKY(n) ? 'https://bsky.app/search?q=' + encodeURIComponent(q) : 'https://x.com/search?f=live&q=' + encodeURIComponent(q);
-const POST = (t, n) => (BSKY(n) ? 'https://bsky.app/intent/compose?text=' : 'https://x.com/intent/post?text=') + encodeURIComponent(t);
+const XQ = (q, n) => n === 'Instagram' ? 'https://www.instagram.com/explore/search/keyword/?q=' + encodeURIComponent(q) : BSKY(n) ? 'https://bsky.app/search?q=' + encodeURIComponent(q) : 'https://x.com/search?f=live&q=' + encodeURIComponent(q);
+const POST = (t, n) => n === 'Instagram' ? 'https://www.instagram.com/' : (BSKY(n) ? 'https://bsky.app/intent/compose?text=' : 'https://x.com/intent/post?text=') + encodeURIComponent(t);
 function drawFollowers(id, plan) {
   const out = $('#plan'); out.replaceChildren();
   document.title = 'Followers plan for @' + plan.handle + ' · Flisk Grow';
@@ -861,7 +861,7 @@ function showTip(e) {
 document.addEventListener('mouseover', showTip); document.addEventListener('focusin', showTip);
 document.addEventListener('scroll', () => tipEl.classList.remove('on'), true);
 
-const isProfile = (u) => /^https?:[/][/](((www[.]|mobile[.])?(x|twitter)[.]com[/][A-Za-z0-9_]+)|((www[.])?bsky[.]app[/]profile[/][A-Za-z0-9.-]+))/i.test(u.trim());
+const isProfile = (u) => /^https?:[/][/](((www[.]|mobile[.])?(x|twitter)[.]com[/][A-Za-z0-9_]+)|((www[.])?bsky[.]app[/]profile[/][A-Za-z0-9.-]+)|((www[.])?instagram[.]com[/][A-Za-z0-9._]+))/i.test(u.trim());
 const STEPS = ['Reading the page', 'Checking if AI search can read it', 'Finding who would buy it', 'Writing the emails', 'Writing the posts'];
 function loader(on) {
   const box = $('#prog'); box.hidden = !on; if (!on) return () => {};
@@ -1017,7 +1017,7 @@ export function page({ planId = '', prefill = '', share = null } = {}) {
 <p class="socials nologo"><span>Followers plan for a profile:</span>
 <span class="soc on"><img src="/logo/x.com" alt="" width="16" height="16">X</span>
 <span class="soc"><img src="/logo/linkedin.com" alt="" width="16" height="16">LinkedIn<em>soon</em></span>
-<span class="soc"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><defs><linearGradient id="ig" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f9a825"/><stop offset=".5" stop-color="#e1306c"/><stop offset="1" stop-color="#5b51d8"/></linearGradient></defs><rect x="1" y="1" width="14" height="14" rx="4" fill="url(#ig)"/><circle cx="8" cy="8" r="3" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="4" r="1" fill="#fff"/></svg>Instagram<em>soon</em></span>
+<span class="soc on"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><defs><linearGradient id="ig" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f9a825"/><stop offset=".5" stop-color="#e1306c"/><stop offset="1" stop-color="#5b51d8"/></linearGradient></defs><rect x="1" y="1" width="14" height="14" rx="4" fill="url(#ig)"/><circle cx="8" cy="8" r="3" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="4" r="1" fill="#fff"/></svg>Instagram</span>
 <span class="soc"><img src="/logo/tiktok.com" alt="" width="16" height="16">TikTok<em>soon</em></span>
 <span class="soc"><img src="/logo/youtube.com" alt="" width="16" height="16">YouTube<em>soon</em></span>
 <span class="soc on"><img src="/logo/bsky.app" alt="" width="16" height="16">Bluesky</span></p>

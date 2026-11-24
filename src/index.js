@@ -1,5 +1,5 @@
 // grow.flisk.si: paste a link, get a plan to find the first customers. No sign-in. Plans are kept 30 days at /p/<id>.
-import { TWEAKS, cleanBrief, cleanLinks, genericFollowers, githubRepo, httpUrl, makePlan, profileOf, rankerFor, rewriteItem, workersAi } from './plan.js';
+import { TWEAKS, cleanBrief, cleanLinks, genericFollowers, githubRepo, httpUrl, makePlan, profileOf, rankerFor, rewriteItem, soonNetwork, workersAi } from './plan.js';
 import { feedback } from './feedback.js';
 import { EXAMPLE } from './example.js';
 import { page } from './page.js';
@@ -144,6 +144,8 @@ async function route(req, env, deps = {}) {
     try { body = await req.json(); } catch { return json(400, { error: 'Send JSON: {"url": "https://..."}' }); }
     const link = httpUrl(body?.url);
     if (!link) return json(400, { error: 'Paste a full link that starts with https://' });
+    const soon = soonNetwork(link);
+    if (soon) return json(422, { error: `${soon} profile plans are coming soon. For now paste an X, Bluesky or Instagram profile, or the link to a site you built.`, soon });
 
     const about = String(body?.about ?? '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300);
     // The same link within a day gets the plan already made: no second model call (unless the owner added a line).
