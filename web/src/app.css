@@ -27,3 +27,17 @@ body{overflow:hidden}
 .chatwin{display:flex;flex-direction:column;width:min(720px,100%);height:min(72vh,640px);border:1px solid var(--color-border,#8884);border-radius:var(--radius,12px);background:var(--color-background,#fff);box-shadow:0 10px 40px #0004;overflow:hidden}
 .chathead{padding:8px 12px;border-bottom:1px solid var(--color-border,#8884)}
 .chatwin iframe{flex:1;width:100%;border:0;background:transparent;color-scheme:normal}
+.sim{border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45;border:1px solid #8883;background:var(--color-background,#fff);overflow-wrap:anywhere}
+.sim-who{display:flex;align-items:center;gap:8px;font-weight:600}
+.sim-av{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#1d9bf0;color:#fff;font-size:11px;flex:none}
+.sim-body{white-space:pre-wrap}
+.sim-link{border:1px solid #8884;border-radius:8px;padding:8px 10px;font-size:12px;opacity:.75}
+.sim-meta{font-size:12px;opacity:.6}
+.sim-title{font-weight:600;font-size:15px}
+.sim-hnbar{background:#ff6600;color:#fff;font-size:12px;font-weight:700;margin:-12px -14px 4px;padding:6px 14px}
+.sim-reddit .sim-title{font-size:16px}
+.sim-discord{background:#313338;color:#dbdee1;border:0}
+.sim-discord .sim-meta{color:#b5bac1;opacity:1}
+.sim-discord .sim-av{background:#5865f2}
+.sim-bsky{border-radius:14px;background:#fff;color:#0f1419}
+.sim-mail{border-radius:6px}

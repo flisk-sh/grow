@@ -109,16 +109,31 @@ function Row({id, done, toggle, logo, title, text, actions}) {
   );
 }
 
-function Draft({id, done, toggle, to, title, body, actions, logo}) {
+function Draft({id, done, toggle, to, title, body, actions, logo, preview}) {
   const on = done.has(id);
   return (
     <Card variant="subtle"><VStack gap={2} className={on ? 'done' : ''}>
       <HStack gap={2} align="center"><CheckboxInput label={'Done: ' + title} isLabelHidden value={on} onChange={() => toggle(id)} />{logo}<Text type="supporting" color="secondary">{to}</Text></HStack>
       <Text weight="semibold">{title}</Text>
-      <div className="pre">{body}</div>
+      {preview || <div className="pre">{body}</div>}
       <HStack gap={2} wrap="wrap">{actions}</HStack>
     </VStack></Card>
   );
+}
+
+// A simulated view of the post as its network shows it, so people see what they will publish.
+function PostPreview({where = '', title, body, url}) {
+  const site = host(url);
+  const who = (
+    <div className="sim-who"><span className="sim-av">You</span><span>@you</span></div>
+  );
+  const link = site && <div className="sim-link">{site}</div>;
+  if (where === 'X') return <div className="sim sim-x">{who}<div className="sim-body">{body}</div>{link}</div>;
+  if (where === 'Reddit') return <div className="sim sim-reddit"><div className="sim-meta">r/yourcommunity · Posted by u/you</div><div className="sim-title">{title}</div><div className="sim-body">{body}</div><div className="sim-meta">0 comments · Share · Save</div></div>;
+  if (where === 'Hacker News') return <div className="sim sim-hn"><div className="sim-hnbar">Hacker News · submit</div><div className="sim-title">{title} <span className="sim-meta">({site})</span></div><div className="sim-meta">1 point by you just now · 0 comments</div><div className="sim-body">{body}</div></div>;
+  if (where === 'Bluesky') return <div className="sim sim-bsky">{who}<div className="sim-body">{body}</div>{link}<div className="sim-meta">Bluesky · 0 replies · 0 reposts</div></div>;
+  if (where === 'Discord') return <div className="sim sim-discord"><div className="sim-meta"># show-your-stack</div>{who}<div className="sim-body">{body}</div></div>;
+  return <div className="sim sim-plain">{title && <div className="sim-title">{title}</div>}<div className="sim-body">{body}</div>{link}</div>;
 }
 
 // ---------- plan ----------
@@ -158,6 +173,7 @@ function StepBody({step, plan, id, done, toggle, goAbout}) {
   if (step === 2) return <Section title="Emails to send" icon={EnvelopeIcon} count={(p.emails || []).length} sub="Drafts only. Add the address in your mail and press Send yourself: nothing is sent for you.">
     <div className="grid">{(p.emails || []).map((e, i) => <Draft key={i} id={'mail' + i} done={done} toggle={toggle} logo={lg('Gmail')} to={'To: ' + (e.to || 'someone who fits')} title={e.subject}
       body={e.body + (e.find ? '\n\nFind them: ' + e.find : '')}
+      preview={<div className="sim sim-mail"><div className="sim-meta">To: {e.to || 'someone who fits'}</div><div className="sim-title">{e.subject}</div><div className="sim-body">{e.body + (e.find ? '\n\nFind them: ' + e.find : '')}</div></div>}
       actions={<>
         <OpenBtn label="Open in Gmail" href={gmail(e)} logo={lg('Gmail')} primary />
         <OpenBtn label="Mail app" href={mailto(e)} icon={EnvelopeIcon} />
@@ -165,7 +181,7 @@ function StepBody({step, plan, id, done, toggle, goAbout}) {
         <CopyBtn text={e.subject + '\n\n' + e.body} /></>} />)}</div></Section>;
 
   if (step === 3) return <Section title="Posts to write" icon={PencilSquareIcon} count={(p.posts || []).length} sub="Opens the post box with the text filled in. You read it, change it and post it yourself.">
-    <div className="grid">{(p.posts || []).length ? p.posts.map((x, i) => { const h = postHref(x, p); return <Draft key={i} id={'post' + i} done={done} toggle={toggle} logo={lg(x.where)} to={x.where} title={x.title || clip(x.body, 60)} body={x.body}
+    <div className="grid">{(p.posts || []).length ? p.posts.map((x, i) => { const h = postHref(x, p); return <Draft key={i} id={'post' + i} done={done} toggle={toggle} logo={lg(x.where)} to={x.where} title={x.title || clip(x.body, 60)} body={x.body} preview={<PostPreview where={x.where} title={x.title} body={x.body} url={p.url} />}
       actions={<>{h && <OpenBtn label={'Open in ' + x.where} href={h} logo={lg(x.where)} primary />}<CopyBtn text={(x.title ? x.title + '\n\n' : '') + x.body} /></>} />; }) : <Text color="secondary">No post drafts this time. Press the button again for drafts for X, Reddit and Hacker News.</Text>}</div></Section>;
 
   const ls = p.listings || [];
@@ -215,7 +231,7 @@ function Followers({plan, id, done, toggle}) {
       <VStack gap={3}><Text>{plan.audience}</Text>{plan.today && <Card variant="blue"><VStack gap={1}><Text type="supporting" weight="semibold">Do this today</Text><Text>{plan.today}</Text></VStack></Card>}</VStack></div></Section>
     {plan.pinned && <Section title="Your pinned post" icon={PencilSquareIcon} sub="The first thing a stranger sees."><div className="pre">{plan.pinned}</div><HStack gap={2}><OpenBtn label={'Open in ' + net} href={POST(plan.pinned, net)} logo={lg(net)} primary /><CopyBtn text={plan.pinned} /></HStack></Section>}
     <Section title="Your first 7 days" icon={ListBulletIcon} sub="About 20 minutes a day."><div className="grid">{(plan.week || []).map((x, i) => <Row key={i} id={'day' + i} done={done} toggle={toggle} logo={ic(ListBulletIcon)} title={x.day} text={x.do} />)}</div></Section>
-    <Section title="Posts to write" icon={PencilSquareIcon} count={(plan.posts || []).length}><div className="grid">{(plan.posts || []).map((x, i) => <Draft key={i} id={'post' + i} done={done} toggle={toggle} logo={lg(net)} to={net} title={x.title} body={x.body} actions={<><OpenBtn label={'Open in ' + net} href={POST(x.body, net)} logo={lg(net)} primary /><CopyBtn text={x.body} /></>} />)}</div></Section>
+    <Section title="Posts to write" icon={PencilSquareIcon} count={(plan.posts || []).length}><div className="grid">{(plan.posts || []).map((x, i) => <Draft key={i} id={'post' + i} done={done} toggle={toggle} logo={lg(net)} to={net} title={x.title} body={x.body} preview={<PostPreview where={net} title={x.title} body={x.body} url={plan.url} />} actions={<><OpenBtn label={'Open in ' + net} href={POST(x.body, net)} logo={lg(net)} primary /><CopyBtn text={x.body} /></>} />)}</div></Section>
     {(plan.accounts || []).length > 0 && <Section title="Accounts to follow and answer" icon={ChatBubbleLeftRightIcon}><div className="grid">{plan.accounts.map((x, i) => <Row key={i} id={'acc' + i} done={done} toggle={toggle} logo={lg(net)} title={x.name} text={x.why} />)}</div></Section>}
   </VStack>;
 }
