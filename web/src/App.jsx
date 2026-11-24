@@ -61,7 +61,7 @@ function toast(t) {
   Object.assign(n.style, {position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', background: '#111', color: '#fff', padding: '9px 16px', borderRadius: '999px', fontSize: '13px', zIndex: 99});
   document.body.append(n); setTimeout(() => n.remove(), 1700);
 }
-const copy = (t) => { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast('Copied')); };
+const copy = (t) => { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast('Copied'), () => toast('Could not copy here. Select the text and copy it yourself.')); else toast('Could not copy here. Select the text and copy it yourself.'); };
 const saveFile = (name, type, text) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 
 function planMd(id, plan) {
@@ -146,7 +146,7 @@ function StepBody({step, plan, id, done, toggle, goAbout, rw}) {
     <GapsCard id={id} plan={p} />
     {p.ranker && <Section title="Your rank on Ranker" icon={ChartBarIcon} sub={p.ranker.listed ? 'Ranker ranks ' + p.ranker.repo + ' by stars gained each day.' : 'Ranker could not list ' + p.ranker.repo + ' just now.'}>
       <HStack gap={2} wrap="wrap">{p.ranker.badge && <img src={p.ranker.badge} alt="Flisk Ranker badge" width="250" height="55" />}<OpenBtn label={p.ranker.listed ? 'Open on Ranker' : 'List it on Ranker'} href={p.ranker.url} logo={lg('Ranker')} primary />{p.ranker.markdown && <CopyBtn text={p.ranker.markdown} label="Copy badge" />}</HStack></Section>}
-    {(p.tools || []).length > 0 && <Section title="More free checks" icon={WrenchScrewdriverIcon}><VStack gap={2}>{p.tools.map((x, i) => row('tool' + i, lg(x.name, x.url), x.name, x.why, <OpenBtn label="Open" href={x.url} />))}</VStack></Section>}
+    {(p.tools || []).length > 0 && <Section title="More free checks" icon={WrenchScrewdriverIcon}><VStack gap={2}>{p.tools.map((x, i) => <Card key={'tool' + i} variant="subtle"><HStack gap={3} align="start">{lg(x.name, x.url)}<VStack gap={1} style={{flex: 1, minWidth: 0}}><Text weight="semibold">{x.name}</Text><Text type="supporting" color="secondary" style={{overflowWrap: 'anywhere'}}>{x.why}</Text><HStack gap={2} wrap="wrap"><OpenBtn label="Open" href={x.url} /></HStack></VStack></HStack></Card>)}</VStack></Section>}
   </VStack>;
 
   if (step === 1) return <VStack gap={4}>
@@ -306,7 +306,7 @@ function PlanView({id, plan, onPlan}) {
           <div><Button label={'Show the whole plan (' + total + ' tasks)'} variant="ghost" icon={ic(ListBulletIcon)} onClick={() => setFull(true)} /></div>
         </VStack>}
         {(full || nexts.length === 0) && <VStack gap={3}>
-          <div><SegmentedControl label="Plan steps" value={String(step)} onChange={(v) => { setStep(+v); history.replaceState(null, '', '#step-' + (+v + 1)); }}>
+          <div className="steps-seg"><SegmentedControl label="Plan steps" value={String(step)} onChange={(v) => { setStep(+v); history.replaceState(null, '', '#step-' + (+v + 1)); }}>
             {STEPS.map((s, i) => <SegmentedControlItem key={s.k} value={String(i)} label={(i + 1) + '. ' + s.t} icon={ic(s.icon)} />)}
           </SegmentedControl></div>
           <Text color="secondary">{STEPS[step].say}</Text>
