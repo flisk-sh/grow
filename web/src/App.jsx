@@ -22,6 +22,7 @@ import {Logo, Names} from './logos.jsx';
 import {GmailCard} from './cards/GmailCard.jsx';
 import {postCardFor} from './cards/PostCard.jsx';
 import Cabinet from './Cabinet.jsx';
+import {PREFIX, t} from './i18n.js';
 
 const GitHubIcon = () => <Logo name="GitHub" size={18} />;
 const ic = (I) => <Icon icon={I} size="sm" />;
@@ -42,7 +43,7 @@ const enc = encodeURIComponent;
 const gmail = (e) => 'https://mail.google.com/mail/?view=cm&fs=1&su=' + enc(e.subject) + '&body=' + enc(e.body);
 const mailto = (e) => 'mailto:?subject=' + enc(e.subject) + '&body=' + enc(e.body);
 const withScheme = (t) => { const v = String(t || '').trim(); return v && !/^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? 'https://' + v : v; };
-const planLink = (id) => location.origin + (id === 'example' ? '/example' : id ? '/p/' + id : '/');
+const planLink = (id) => location.origin + PREFIX + (id === 'example' ? '/example' : id ? '/p/' + id : '/');
 const BSKY = (n) => n === 'Bluesky';
 // Instagram has no "write a post" link, so its button opens Instagram and the text is copied beside it.
 const POST = (t, n) => n === 'Instagram' ? 'https://www.instagram.com/' : (BSKY(n) ? 'https://bsky.app/intent/compose?text=' : 'https://x.com/intent/post?text=') + enc(t);
@@ -331,7 +332,7 @@ function useRotatingHint(list, ms = 2000) {
   useEffect(() => { const t = setInterval(() => setI((n) => (n + 1) % list.length), ms); return () => clearInterval(t); }, [list, ms]);
   return list[i];
 }
-const MAKE_STEPS = ['Reading your page', 'Checking AI search', 'Finding who would buy it', 'Writing emails and posts', 'Finding places to list it'];
+const MAKE_STEPS = ['makeStep1', 'makeStep2', 'makeStep3', 'makeStep4', 'makeStep5'].map(t);
 
 function Home({onPlan}) {
   const [url, setUrl] = useState(BOOT.prefill || '');
@@ -346,49 +347,49 @@ function Home({onPlan}) {
   useEffect(() => { if (!busy) return undefined; setTick(0); const t = setInterval(() => setTick((n) => n + 1), 3500); return () => clearInterval(t); }, [busy]);
   const make = async (e) => {
     e && e.preventDefault(); setErr('');
-    const u = withScheme(url); if (!/^https?:\/\/[^\s/]+\.[^\s/]{2,}/i.test(u)) { setErr('Enter a link to your site, like your-site.com'); return; }
+    const u = withScheme(url); if (!/^https?:\/\/[^\s/]+\.[^\s/]{2,}/i.test(u)) { setErr(t('badLink')); return; }
     setRecent(saveRecent(u)); setBusy(true);
     try {
       const r = await fetch('/api/plan', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({url: u, about: about.trim() || undefined})});
-      const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Something went wrong. Press the button again.');
+      const j = await r.json(); if (!r.ok) throw new Error(j.error || t('wrong'));
       onPlan(j.id || '', j.plan);
     } catch (x) { setErr(x.message); setBusy(false); }
   };
-  const paste = async () => { try { const t = await navigator.clipboard.readText(); if (t) setUrl(t.trim()); } catch { toast('Paste with Ctrl+V or Cmd+V'); } };
+  const paste = async () => { try { const t = await navigator.clipboard.readText(); if (t) setUrl(t.trim()); } catch { toast(t('pasteHint')); } };
   return (
     <div className="hero"><VStack gap={4} align="center">
-      <Badge label="Free · no sign-in · plans kept 30 days" icon={ic(SparklesIcon)} />
-      <Heading level={1}>Find your first customers.</Heading>
-      <Text color="secondary" type="lead">Paste a link to what you made. Get who would buy it, where they are, emails and posts to send, whether AI search can read your page, and where to list it.</Text>
+      <Badge label={t('badge')} icon={ic(SparklesIcon)} />
+      <Heading level={1}>{t('h1')}</Heading>
+      <Text color="secondary" type="lead">{t('lead')}</Text>
       <form onSubmit={make}><VStack gap={2}>
         <datalist id="grow-recent-urls">{recent.map((r) => <option key={r} value={r} />)}</datalist>
         <div className="url-row">
-          <div className="url-field"><TextInput label="Link to your site" isLabelHidden type="url" htmlName="url" autoComplete="url" value={url} onChange={setUrl} placeholder={hint} startIcon={ic(LinkIcon)} size="lg" /></div>
-          <Button label="Paste" variant="secondary" size="lg" icon={ic(ClipboardDocumentIcon)} onClick={paste} type="button" />
+          <div className="url-field"><TextInput label={t('linkLabel')} isLabelHidden type="url" htmlName="url" autoComplete="url" value={url} onChange={setUrl} placeholder={hint} startIcon={ic(LinkIcon)} size="lg" /></div>
+          <Button label={t('paste')} variant="secondary" size="lg" icon={ic(ClipboardDocumentIcon)} onClick={paste} type="button" />
         </div>
         {recent.length > 0 && <HStack gap={1} wrap="wrap" justify="center" align="center">
-          <Text type="supporting" color="secondary">Recent:</Text>
+          <Text type="supporting" color="secondary">{t('recent')}</Text>
           {recent.slice(0, 5).map((r) => <Button key={r} label={clip(r.replace(/^https?:\/\//, ''), 32)} variant="ghost" size="sm" type="button" onClick={() => setUrl(r)} />)}
         </HStack>}
-        <TextInput label="What is it about (optional)" isLabelHidden value={about} onChange={setAbout} placeholder="Optional: one line on who it is for" startIcon={ic(PencilSquareIcon)} />
+        <TextInput label={t('aboutLabel')} isLabelHidden value={about} onChange={setAbout} placeholder={t('aboutPlaceholder')} startIcon={ic(PencilSquareIcon)} />
         <HStack gap={2} justify="center" wrap="wrap">
-          <Button label={busy ? 'Making your plan…' : 'Make my plan'} variant="primary" type="submit" isDisabled={busy} icon={ic(RocketLaunchIcon)} />
-          <Button label="See an example plan" variant="ghost" icon={ic(DocumentTextIcon)} href="/example" />
+          <Button label={busy ? t('making') : t('make')} variant="primary" type="submit" isDisabled={busy} icon={ic(RocketLaunchIcon)} />
+          <Button label={t('example')} variant="ghost" icon={ic(DocumentTextIcon)} href={PREFIX + '/example'} />
         </HStack>
       </VStack></form>
       {err && <Banner status="error" title={err} />}
       {busy && <Card><VStack gap={2}>
-        <ProgressBar label="Making your plan" isLabelHidden value={Math.min(95, 12 + tick * 16)} max={100} />
+        <ProgressBar label={t('making')} isLabelHidden value={Math.min(95, 12 + tick * 16)} max={100} />
         {MAKE_STEPS.map((s, i) => <div key={s} className="prog-step" style={{opacity: i > tick ? 0.45 : 1}}><Icon icon={i < tick ? ClipboardDocumentCheckIcon : SparklesIcon} size="sm" /><Text>{s}</Text></div>)}
-        <Text type="supporting" color="secondary">About 20 seconds.</Text>
+        <Text type="supporting" color="secondary">{t('about20')}</Text>
       </VStack></Card>}
       <HStack gap={2} wrap="wrap" justify="center">
         {['Hacker News', 'Reddit', 'Product Hunt', 'X', 'Bluesky', 'Instagram'].map((n) => <Badge key={n} label={n} icon={lg(n)} />)}
       </HStack>
       <HStack gap={2} wrap="wrap" justify="center">
-        {['LinkedIn', 'YouTube', 'TikTok'].map((n) => <Badge key={n} label={n + ' · coming soon'} icon={lg(n)} />)}
+        {['LinkedIn', 'YouTube', 'TikTok'].map((n) => <Badge key={n} label={n + ' · ' + t('comingSoon')} icon={lg(n)} />)}
       </HStack>
-      <Text type="supporting" color="secondary">Followers plan for a profile: paste an <Names text="X" />, <Names text="Bluesky" /> or <Names text="Instagram" /> profile link.</Text>
+      <Text type="supporting" color="secondary">{t('followers')} <Names text="X" />, <Names text="Bluesky" /> {t('followersOr')} <Names text="Instagram" /> {t('followersEnd')}</Text>
     </VStack></div>
   );
 }
@@ -398,15 +399,15 @@ function Nav({go, plan, id, me}) {
   return (
     <SideNav collapsible
       header={<HStack gap={2} align="center"><span className="brand"><Icon icon={RocketLaunchIcon} size="sm" /></span><Text type="emphasized">Flisk Grow</Text></HStack>}
-      topContent={<Button label="New plan" variant="secondary" icon={ic(PlusIcon)} isFullWidth onClick={() => go('/')} />}
-      footer={<Text type="supporting" color="secondary">No account needed. Sign in only to save a plan.</Text>}>
-      <SideNavSection title="Workspace">
-        <SideNavItem label="Home" icon={HomeIcon} isSelected={!plan && !me} onClick={() => go('/')} />
-        {plan && <SideNavItem label="This plan" icon={DocumentTextIcon} isSelected onClick={() => {}} />}
-        <SideNavItem label="My cabinet" icon={BookmarkIcon} isSelected={me} href="/me" />
+      topContent={<Button label={t('navNew')} variant="secondary" icon={ic(PlusIcon)} isFullWidth onClick={() => go('/')} />}
+      footer={<Text type="supporting" color="secondary">{t('navFooter')}</Text>}>
+      <SideNavSection title={t('navWorkspace')}>
+        <SideNavItem label={t('navHome')} icon={HomeIcon} isSelected={!plan && !me} onClick={() => go('/')} />
+        {plan && <SideNavItem label={t('navThisPlan')} icon={DocumentTextIcon} isSelected onClick={() => {}} />}
+        <SideNavItem label={t('navCabinet')} icon={BookmarkIcon} isSelected={me} href="/me" />
       </SideNavSection>
       <SideNavSection title="Flisk">
-        <SideNavItem label="Example plan" icon={SparklesIcon} onClick={() => go('/example')} />
+        <SideNavItem label={t('navExample')} icon={SparklesIcon} onClick={() => go('/example')} />
         <SideNavItem label="GitHub" icon={GitHubIcon} href="https://github.com/flisk-sh/grow" target="_blank" />
       </SideNavSection>
     </SideNav>
@@ -414,35 +415,36 @@ function Nav({go, plan, id, me}) {
 }
 
 export default function App() {
-  const parse = () => { const m = location.pathname.match(/^\/(?:p\/([0-9a-f]{12})|(example))$/); return m ? (m[1] || 'example') : ''; };
+  const bare = () => location.pathname.slice(PREFIX.length);
+  const parse = () => { const m = bare().match(/^\/(?:p\/([0-9a-f]{12})|(example))$/); return m ? (m[1] || 'example') : ''; };
   const isMe = () => location.pathname.replace(/\/+$/, '') === '/me';
   const [me, setMe] = useState(isMe);
   const [id, setId] = useState(parse);
   const [plan, setPlan] = useState(BOOT.plan || null);
   const [error, setError] = useState('');
   const [navOpen, setNavOpen] = useState(false);
-  const go = (path) => { history.pushState(null, '', path); setPlan(null); setError(''); setId(parse()); setMe(isMe()); setNavOpen(false); };
+  const go = (path) => { history.pushState(null, '', PREFIX + path); setPlan(null); setError(''); setId(parse()); setMe(isMe()); setNavOpen(false); };
   useEffect(() => { const f = () => { setPlan(null); setId(parse()); setMe(isMe()); }; addEventListener('popstate', f); return () => removeEventListener('popstate', f); }, []);
   useEffect(() => {
     if (!id || plan || me) return;
     let live = true;
-    fetch('/api/plan/' + id).then((r) => r.json()).then((j) => { if (!live) return; if (j.error) setError(j.error); else setPlan(j.plan); }).catch(() => live && setError('Could not load this plan.'));
+    fetch('/api/plan/' + id).then((r) => r.json()).then((j) => { if (!live) return; if (j.error) setError(j.error); else setPlan(j.plan); }).catch(() => live && setError(t('loadFail')));
     return () => { live = false; };
   }, [id, plan]);
-  const onPlan = (newId, p) => { if (newId) history.pushState(null, '', '/p/' + newId); setId(newId || 'guide'); setPlan(p); };
+  const onPlan = (newId, p) => { if (newId) history.pushState(null, '', PREFIX + '/p/' + newId); setId(newId || 'guide'); setPlan(p); };
   const drawer = <MobileNav header="Flisk Grow"><SideNavRenderContext value="drawer-content"><Nav go={go} plan={plan} id={id} me={me} /></SideNavRenderContext></MobileNav>;
   return (
     <AppShell height="fill" mobileNav={{hasToggle: false, isOpen: navOpen, onOpenChange: setNavOpen, content: drawer}}
-      topNav={<HStack gap={2} align="center" style={{padding: 'var(--spacing-2) var(--spacing-3)'}}><MobileNavToggle /><Text type="supporting" color="secondary">{me ? 'My cabinet' : plan ? 'Plans / ' + planName(plan.url || '') : 'Flisk Grow'}</Text></HStack>}
+      topNav={<HStack gap={2} align="center" style={{padding: 'var(--spacing-2) var(--spacing-3)'}}><MobileNavToggle /><Text type="supporting" color="secondary">{me ? t('cabinet') : plan ? t('plans') + ' / ' + planName(plan.url || '') : 'Flisk Grow'}</Text></HStack>}
       sideNav={<Nav go={go} plan={plan} id={id} me={me} />}>
       <div style={{height: '100%', overflow: 'auto'}}>
-        {me ? <Cabinet /> : error ? <div className="page"><VStack gap={3}><Banner status="error" title={error} /><div><Button label="Make a new plan" variant="primary" icon={ic(PlusIcon)} onClick={() => go('/')} /></div></VStack></div>
-          : id && !plan ? <div className="page"><Text color="secondary">Loading the plan…</Text></div>
+        {me ? <Cabinet /> : error ? <div className="page"><VStack gap={3}><Banner status="error" title={error} /><div><Button label={t('newPlan')} variant="primary" icon={ic(PlusIcon)} onClick={() => go('/')} /></div></VStack></div>
+          : id && !plan ? <div className="page"><Text color="secondary">{t('loading')}</Text></div>
           : plan ? <PlanView key={id} id={id === 'guide' ? '' : id} plan={plan} onPlan={setPlan} />
           : <Home onPlan={onPlan} />}
       </div>
-      <a className="pro-fab" href="https://chat.flisk.si" target="_blank" rel="noopener" title="Open Flisk Chat to get a deeper, customised plan with AI">
-        <Logo name="chat.flisk.si" url="https://chat.flisk.si" size={20} /><span>Get an advanced AI plan</span>
+      <a className="pro-fab" href="https://chat.flisk.si" target="_blank" rel="noopener" title={t('proTitle')}>
+        <Logo name="chat.flisk.si" url="https://chat.flisk.si" size={20} /><span>{t('pro')}</span>
       </a>
     </AppShell>
   );

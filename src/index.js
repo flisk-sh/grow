@@ -3,6 +3,7 @@ import { TWEAKS, cleanBrief, cleanLinks, genericFollowers, githubRepo, httpUrl, 
 import { feedback } from './feedback.js';
 import { EXAMPLE } from './example.js';
 import { page } from './page.js';
+import { LANGS, SITE, splitLang } from './i18n.js';
 import { nextAsset, nextPage } from './next.js';
 import { cabinet } from './cabinet.js';
 import { clicks } from './clicks.js';
@@ -20,7 +21,12 @@ const nextHtml = (body) => html(body, { 'content-security-policy': "default-src 
 const today = () => new Date().toISOString().slice(0, 10);
 const newId = () => [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, '0')).join('');
 
-const ROBOTS = 'User-agent: *\nAllow: /$\nAllow: /llms.txt\nDisallow: /p/\nDisallow: /me\nDisallow: /auth/\nDisallow: /api/\nDisallow: /*?\n\nSitemap: https://grow.flisk.si/sitemap.xml\n';
+const homeUrl = (l) => SITE + (l === 'en' ? '/' : `/${l}/`);
+// Each language home lists every language, so search engines pair the translations.
+const SITEMAP = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+  + LANGS.map((l) => `<url><loc>${homeUrl(l)}</loc>${LANGS.map((a) => `<xhtml:link rel="alternate" hreflang="${a}" href="${homeUrl(a)}"/>`).join('')}<xhtml:link rel="alternate" hreflang="x-default" href="${SITE}/"/></url>`).join('')
+  + '</urlset>';
+const ROBOTS = 'User-agent: *\nAllow: /$\nAllow: /lv/$\nAllow: /llms.txt\nDisallow: /p/\nDisallow: /lv/p/\nDisallow: /me\nDisallow: /auth/\nDisallow: /api/\nDisallow: /*?\n\nSitemap: https://grow.flisk.si/sitemap.xml\n';
 const SECURITY_TXT = `Contact: https://github.com/flisk-sh/grow/security/advisories/new
 Expires: 2027-06-01T00:00:00Z
 Preferred-Languages: en
@@ -63,7 +69,7 @@ async function route(req, env, deps = {}) {
   if (req.method === 'OPTIONS') return new Response(null, { headers: { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' } });
   if (path === '/robots.txt') return new Response(ROBOTS, { headers: { 'content-type': 'text/plain', 'cache-control': STATIC_CACHE } });
   if (path === '/.well-known/security.txt') return new Response(SECURITY_TXT, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=86400' } });
-  if (path === '/sitemap.xml') return new Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://grow.flisk.si/</loc></url></urlset>', { headers: { 'content-type': 'application/xml', 'cache-control': STATIC_CACHE } });
+  if (path === '/sitemap.xml') return new Response(SITEMAP, { headers: { 'content-type': 'application/xml', 'cache-control': STATIC_CACHE } });
   if (path === '/llms.txt') return new Response(LLMS, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   if (path === '/icon.svg' || path === '/favicon.ico') return new Response(ICON, { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'max-age=86400' } });
   if (path === '/apple-touch-icon.png') return new Response(TOUCH_ICON_PNG, { headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' } });
@@ -89,16 +95,21 @@ async function route(req, env, deps = {}) {
     if (old) return new Response(null, { status: 301, headers: { location: (old[1] || '/') + url.search } });
   }
 
+  // /lv -> /lv/ so each language home has one address.
+  if ((req.method === 'GET' || req.method === 'HEAD') && LANGS.some((l) => l !== 'en' && path === '/' + l)) return new Response(null, { status: 301, headers: { location: path + '/' + url.search } });
+
   // The Astryx look: /, /example and /p/<id> (the built files live at /_app/).
   if (req.method === 'GET' || req.method === 'HEAD') {
     const asset = path.startsWith('/_app/') ? nextAsset(path) : null;
     if (asset) return asset;
-    if (path === '/example') return nextHtml(nextPage({ planId: 'example', share: { host: 'an example', summary: EXAMPLE.product }, index: false }));
-    if (path === '/') {
+    // A language lives under its own prefix (/lv/, /lv/example, /lv/p/<id>); English stays at the root.
+    const { lang, path: lp } = splitLang(path);
+    if (lp === '/example') return nextHtml(nextPage({ planId: 'example', share: { host: lang === 'lv' ? 'piemērs' : 'an example', summary: EXAMPLE.product }, index: false, lang }));
+    if (lp === '/') {
       // A link with ?url= only fills the box: a plan costs a model call, so a person presses the button.
-      return nextHtml(nextPage({ prefill: httpUrl(url.searchParams.get('url')), index: !url.search }));
+      return nextHtml(nextPage({ prefill: httpUrl(url.searchParams.get('url')), index: !url.search, lang }));
     }
-    const np = /^\/p\/([0-9a-f]{12})$/.exec(path);
+    const np = /^\/p\/([0-9a-f]{12})$/.exec(lp);
     if (np) {
       const row = await env.DB.prepare('SELECT url, data, created FROM plans WHERE id = ?').bind(np[1]).first();
       let share = null;
@@ -107,7 +118,7 @@ async function route(req, env, deps = {}) {
         let summary = ''; try { const d = JSON.parse(row.data); summary = String(d.product || d.account || '').slice(0, 200); } catch { /* no summary */ }
         share = { host: h, summary };
       }
-      return nextHtml(nextPage({ planId: np[1], share, index: false }));
+      return nextHtml(nextPage({ planId: np[1], share, index: false, lang }));
     }
   }
 
