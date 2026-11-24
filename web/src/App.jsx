@@ -44,7 +44,8 @@ const mailto = (e) => 'mailto:?subject=' + enc(e.subject) + '&body=' + enc(e.bod
 const withScheme = (t) => { const v = String(t || '').trim(); return v && !/^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? 'https://' + v : v; };
 const planLink = (id) => location.origin + (id === 'example' ? '/example' : id ? '/p/' + id : '/');
 const BSKY = (n) => n === 'Bluesky';
-const POST = (t, n) => (BSKY(n) ? 'https://bsky.app/intent/compose?text=' : 'https://x.com/intent/post?text=') + enc(t);
+// Instagram has no "write a post" link, so its button opens Instagram and the text is copied beside it.
+const POST = (t, n) => n === 'Instagram' ? 'https://www.instagram.com/' : (BSKY(n) ? 'https://bsky.app/intent/compose?text=' : 'https://x.com/intent/post?text=') + enc(t);
 function postHref(x, plan) {
   const body = (x.body || x.title || '') + ' ' + plan.url;
   if (x.where === 'X') return 'https://x.com/intent/post?text=' + enc(body);
@@ -379,9 +380,12 @@ function Home({onPlan}) {
         <Text type="supporting" color="secondary">About 20 seconds.</Text>
       </VStack></Card>}
       <HStack gap={2} wrap="wrap" justify="center">
-        {['Hacker News', 'Reddit', 'Product Hunt', 'X', 'Bluesky'].map((n) => <Badge key={n} label={n} icon={lg(n)} />)}
+        {['Hacker News', 'Reddit', 'Product Hunt', 'X', 'Bluesky', 'Instagram'].map((n) => <Badge key={n} label={n} icon={lg(n)} />)}
       </HStack>
-      <Text type="supporting" color="secondary">Followers plan for a profile: paste an <Names text="X" /> or <Names text="Bluesky" /> profile link.</Text>
+      <HStack gap={2} wrap="wrap" justify="center">
+        {['LinkedIn', 'YouTube', 'TikTok'].map((n) => <Badge key={n} label={n + ' · coming soon'} icon={lg(n)} />)}
+      </HStack>
+      <Text type="supporting" color="secondary">Followers plan for a profile: paste an <Names text="X" />, <Names text="Bluesky" /> or <Names text="Instagram" /> profile link.</Text>
     </VStack></div>
   );
 }

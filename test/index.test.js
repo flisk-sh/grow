@@ -180,12 +180,14 @@ describe('slow model', () => {
   });
 });
 
-test('home page names the networks: X now, the rest soon', async () => {
+test('home page names the networks: X, Bluesky and Instagram now, the rest soon', async () => {
   const { handle } = await import('../src/index.js');
   const html = await (await handle(new Request('https://grow.flisk.si/classic'), {})).text();
   expect(html).toContain('/logo/x.com');
   expect(html).toContain('class="socials nologo"');
-  expect(html).toContain('Instagram<em>soon</em>');
+  expect(html).toContain('Instagram</span>');
+  expect(html).not.toContain('Instagram<em>soon</em>');
+  expect(html).toContain('LinkedIn<em>soon</em>');
 });
 
 describe('model out of budget', () => {
@@ -271,5 +273,16 @@ describe('model on the AI binding', () => {
     const { MODEL_PLAN } = await import('./fixtures.js');
     const r = await setup({ INFERENCE_KEY: '', AI: { run: async () => ({ response: MODEL_PLAN }) } }).post('https://a.com/');
     expect(r.status).toBe(200);
+  });
+});
+
+describe('profile links on networks not built yet', () => {
+  test('a LinkedIn profile answers coming soon, not a site plan', async () => {
+    const { handle } = await import('../src/index.js');
+    const r = await handle(new Request('https://grow.flisk.si/api/plan', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://www.linkedin.com/in/someone' }) }), {});
+    expect(r.status).toBe(422);
+    const j = await r.json();
+    expect(j.soon).toBe('LinkedIn');
+    expect(j.error).toContain('coming soon');
   });
 });

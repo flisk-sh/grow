@@ -225,6 +225,18 @@ ${RULES}`;
 // A link to a person's or brand's profile on a social network. Its page is behind a login, so it cannot be read and a
 // "who would buy it" plan makes no sense: the goal there is followers.
 const RESERVED = new Set(['home', 'i', 'search', 'explore', 'intent', 'share', 'login', 'signup', 'settings', 'messages', 'notifications', 'compose', 'hashtag', 'tos', 'privacy']);
+const IG_RESERVED = new Set(['p', 'reel', 'reels', 'tv', 'stories', 'explore', 'accounts', 'direct', 'about', 'legal', 'developer', 'directory', 'web', 'api', 'press', 'privacy', 'terms']);
+// Profile links on networks whose followers plan is not built yet (LinkedIn, YouTube, TikTok): the page says "coming
+// soon" instead of making a "who would buy it" plan for a profile it cannot read.
+export function soonNetwork(url) {
+  try {
+    const u = new URL(url); const h = u.hostname.toLowerCase().replace(/^(www|m|mobile)[.]/, ''); const [a = '', b = ''] = u.pathname.split('/').filter(Boolean);
+    if (h === 'linkedin.com' && /^(in|company|school)$/i.test(a) && b) return 'LinkedIn';
+    if ((h === 'youtube.com' && (/^@/.test(a) || (/^(c|channel|user)$/i.test(a) && b))) ) return 'YouTube';
+    if (h === 'tiktok.com' && /^@/.test(a)) return 'TikTok';
+    return '';
+  } catch { return ''; }
+}
 export function profileOf(url) {
   try {
     const u = new URL(url);
@@ -233,6 +245,11 @@ export function profileOf(url) {
       if (seg !== 'profile' || !/^[A-Za-z0-9][A-Za-z0-9.-]{0,251}[A-Za-z0-9]$/.test(handle) || !handle.includes('.')) return null;
       return { network: 'Bluesky', handle: handle.toLowerCase() };
     }
+    if (/^(www\.)?instagram\.com$/i.test(u.hostname)) {
+      const handle = u.pathname.split('/').filter(Boolean)[0] || '';
+      if (!/^[A-Za-z0-9._]{1,30}$/.test(handle) || IG_RESERVED.has(handle.toLowerCase())) return null;
+      return { network: 'Instagram', handle: handle.toLowerCase() };
+    }
     if (!/^(www\.|mobile\.)?(x|twitter)\.com$/i.test(u.hostname)) return null;
     const handle = u.pathname.split('/').filter(Boolean)[0] || '';
     if (!/^[A-Za-z0-9_]{1,15}$/.test(handle) || RESERVED.has(handle.toLowerCase())) return null;
@@ -240,7 +257,10 @@ export function profileOf(url) {
   } catch { return null; }
 }
 
-export const followersSystem = (network = 'X') => FOLLOWERS_SYSTEM.replace('their X (Twitter) account', network === 'Bluesky' ? 'their Bluesky account' : 'their X (Twitter) account').replace('an X post under 270', (network === 'Bluesky' ? 'a Bluesky post under 270' : 'an X post under 270'));
+export const followersSystem = (network = 'X') => {
+  const name = network === 'X' ? 'X (Twitter)' : network;
+  return FOLLOWERS_SYSTEM.replace('their X (Twitter) account', 'their ' + name + ' account').replace('an X post under 270', (network === 'X' ? 'an X' : 'a ' + network) + ' post under 270');
+};
 export const FOLLOWERS_SYSTEM = `You help a person grow the followers of their X (Twitter) account, with no ads and no bots.
 You get the handle and, maybe, a line from the owner about what the account is for. You cannot open the profile.
 If you do not know the account, build the plan from the handle and the owner's line, and say so in "account". Never invent facts about it.

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { cleanFollowers, cleanLinks, cleanPlan, httpUrl, linkKind, makePlan, parseJson, profileLinks, profileOf, readPage } from '../src/plan.js';
+import { cleanFollowers, cleanLinks, cleanPlan, httpUrl, linkKind, makePlan, parseJson, profileLinks, profileOf, readPage, soonNetwork, followersSystem } from '../src/plan.js';
 import { MODEL_PLAN, fakeFetch } from './fixtures.js';
 
 describe('plan', () => {
@@ -157,5 +157,25 @@ describe('followers plan for a profile link', () => {
     expect(cleanFollowers({ ...FOLLOWERS, posts: [] }, p)).toBeNull();
     expect(cleanFollowers({ ...FOLLOWERS, week: [] }, p)).toBeNull();
     expect(cleanFollowers({ ...FOLLOWERS, audience: '' }, p)).toBeNull();
+  });
+});
+
+describe('Instagram profiles', () => {
+  test('profileOf reads Instagram handles and skips post and app paths', () => {
+    expect(profileOf('https://www.instagram.com/someuser')).toEqual({ network: 'Instagram', handle: 'someuser' });
+    expect(profileOf('https://instagram.com/Some.User/?hl=en')).toEqual({ network: 'Instagram', handle: 'some.user' });
+    expect(profileOf('https://www.instagram.com/p/abc123/')).toBeNull();
+    expect(profileOf('https://www.instagram.com/')).toBeNull();
+  });
+  test('soonNetwork flags LinkedIn, YouTube and TikTok profiles only', () => {
+    expect(soonNetwork('https://www.linkedin.com/in/someone')).toBe('LinkedIn');
+    expect(soonNetwork('https://www.youtube.com/@someone')).toBe('YouTube');
+    expect(soonNetwork('https://www.tiktok.com/@someone')).toBe('TikTok');
+    expect(soonNetwork('https://www.youtube.com/watch?v=1')).toBe('');
+    expect(soonNetwork('https://example.com/@someone')).toBe('');
+  });
+  test('the model prompt names Instagram', () => {
+    expect(followersSystem('Instagram')).toContain('their Instagram account');
+    expect(followersSystem('X')).toContain('their X (Twitter) account');
   });
 });
