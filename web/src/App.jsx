@@ -373,7 +373,7 @@ function Home({onPlan}) {
         </HStack>}
         <TextInput label={t('aboutLabel')} isLabelHidden value={about} onChange={setAbout} placeholder={t('aboutPlaceholder')} startIcon={ic(PencilSquareIcon)} />
         <HStack gap={2} justify="center" wrap="wrap">
-          <Button label={busy ? t('making') : t('make')} variant="primary" type="submit" isDisabled={busy} icon={ic(RocketLaunchIcon)} />
+          <span className="next-cta" data-next-cta style={{display: 'inline-block', borderRadius: 12}}><Button label={busy ? t('making') : t('make')} variant="primary" type="submit" isDisabled={busy} icon={ic(RocketLaunchIcon)} /></span>
           <Button label={t('example')} variant="ghost" icon={ic(DocumentTextIcon)} href={PREFIX + '/example'} />
         </HStack>
       </VStack></form>
