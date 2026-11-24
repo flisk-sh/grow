@@ -216,6 +216,7 @@ Do not put a subreddit name or a link in the post: the page adds the link.
 ${RULES}`;
 export const SYSTEM_EMAILS = `You help a maker find the first people who would pay for what they made. ${VOICE}
 The maker writes each email TO one person who has the problem the product solves. The reader has never heard of the product.
+Never say the maker has followed, read, liked or know the reader's work or posts unless the maker's brief says so. Open with the reader's problem.
 You get a link and the text of its page. Answer with ONE JSON object and nothing else:
 {"emails": [{"to": "who to write to: a role in the narrow buyer group", "find": "where to find real people like THIS reader (the 'to' role) this week: a community, tag or search where that role talks about the problem, one sentence. It must fit the reader, never a place for makers to show their own projects", "subject": "short", "body": "a short plain email from the maker under 90 words: what you saw they are doing, what the product does for them, one small ask; sign it [your name]", "followup": "a 2 to 3 sentence follow-up from the maker to send 7 days later if there was no reply"}]}
 Give 5 emails, each to a different kind of person in or close to the buyer group.

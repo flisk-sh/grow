@@ -62,7 +62,8 @@ function modelFor(env, fetchImpl) {
 
 async function route(req, env, deps = {}) {
   const url = new URL(req.url);
-  const path = url.pathname;
+  // /p/<id>/ is the same plan as /p/<id>.
+  const path = /^\/(lv\/)?p\/[^/]+\/+$/.test(url.pathname) ? url.pathname.replace(/\/+$/, '') : url.pathname;
   const fetchImpl = deps.fetch || fetch;
   const cache = deps.cache === undefined ? globalThis.caches?.default : deps.cache;
 
@@ -79,7 +80,7 @@ async function route(req, env, deps = {}) {
   if (lm) {
     const hit = cache && await cache.match(req);
     if (hit) return hit;
-    const r = await fetchImpl(`https://icons.duckduckgo.com/ip3/${lm[1]}.ico`).catch(() => null);
+    const r = await fetchImpl(`https://icons.duckduckgo.com/ip3/${lm[1]}.ico`, { signal: AbortSignal.timeout(4000) }).catch(() => null);
     const res = new Response(r?.ok ? r.body : ICON, { headers: { 'content-type': r?.ok ? (r.headers.get('content-type') || 'image/x-icon') : 'image/svg+xml', 'cache-control': 'public, max-age=604800' } });
     if (cache && r?.ok) await cache.put(req, res.clone());
     return res;
@@ -119,6 +120,11 @@ async function route(req, env, deps = {}) {
         share = { host: h, summary };
       }
       return nextHtml(nextPage({ planId: np[1], share, index: false, lang }));
+    }
+    // Any other /p/ address: the home page with a 404 status, not bare text.
+    if (/^\/p\/[^/]+$/.test(lp)) {
+      const r = nextHtml(nextPage({ prefill: '', index: false, lang }));
+      return new Response(r.body, { status: 404, headers: { ...Object.fromEntries(r.headers), 'x-robots-tag': 'noindex, nofollow' } });
     }
   }
 
