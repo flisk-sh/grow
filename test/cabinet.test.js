@@ -52,6 +52,22 @@ describe('listen', () => {
     const f = async (u) => new Response(JSON.stringify(String(u).includes('bsky') ? { posts: [post('a'), post('b')] } : {}));
     expect((await listen(['free page hosting'], { fetch: f, now })).length).toBe(1);
   });
+  test('keeps the newest copy of a lead across sources', async () => {
+    const title = 'Need a readme checker';
+    const newer = 'https://github.com/o/r/issues/4';
+    const f = async (u) => {
+      const host = new URL(u).hostname;
+      if (host === 'hn.algolia.com') {
+        return Response.json({ hits: [{ objectID: '7', title, author: 'ann', created_at_i: Math.floor(now / 1000) - 3600 }] });
+      }
+      if (host === 'api.github.com') {
+        return Response.json({ items: [{ html_url: newer, title, body: title, user: { login: 'dan' }, created_at: new Date(now).toISOString() }] });
+      }
+      return Response.json({});
+    };
+    const out = await listen(['readme checker'], { fetch: f, now });
+    expect(out.map((l) => l.url)).toEqual([newer]);
+  });
   test('a failing source gives nothing, not an error', async () => {
     expect(await listen(['x y z'], { fetch: async () => { throw new Error('down'); }, now })).toEqual([]);
   });

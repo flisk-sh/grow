@@ -95,8 +95,8 @@ export async function listen(keywords, { fetch: fetchImpl, days = 30, now = Date
   const seen = new Set();
   const gists = new Set();
   return (await Promise.all(runs)).flat()
-    .filter((l) => l.url && l.at >= since && mentions(l, keywords) && notOwn(l, exclude) && !seen.has(l.url) && seen.add(l.url) && !gists.has(gist(l)) && gists.add(gist(l)))
     .sort((a, b) => b.at - a.at)
+    .filter((l) => l.url && l.at >= since && mentions(l, keywords) && notOwn(l, exclude) && !seen.has(l.url) && seen.add(l.url) && !gists.has(gist(l)) && gists.add(gist(l)))
     .slice(0, 60);
 }
 
