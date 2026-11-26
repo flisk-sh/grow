@@ -165,6 +165,18 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;opa
   font:600 12px var(--mono);padding:10px 14px;border:1px solid var(--ink);box-shadow:4px 4px 0 var(--acc);transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
 .cool-toast.on{transform:translate(-50%,0)}
 
+/* one-time GitHub star card after a new plan */
+.star-ask{position:fixed;left:50%;bottom:22px;z-index:62;width:min(360px,calc(100vw - 32px));transform:translate(-50%,140%);background:var(--ink);color:var(--bg);
+  border:1px solid var(--ink);box-shadow:4px 4px 0 var(--acc);padding:14px 16px;font:400 13px/1.45 var(--mono);transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.star-ask.on{transform:translate(-50%,0)}
+.star-ask h4{margin:0 22px 4px 0;font:700 14px var(--mono)}
+.star-ask p{margin:0 0 12px;opacity:.8}
+.star-ask .row{display:flex;gap:8px}
+.star-ask .row a,.star-ask .row button{flex:1;font:600 12px var(--mono);padding:9px 10px;border:1px solid var(--bg);background:transparent;color:var(--bg);text-align:center;text-decoration:none;cursor:pointer}
+.star-ask .row a{background:var(--acc);border-color:var(--acc);color:var(--ink)}
+.star-ask .x{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--bg);cursor:pointer;font-size:18px;line-height:1}
+@media (prefers-reduced-motion: reduce){.star-ask{transition:none}}
+
 /* marquee ticker under the head */
 .cool-tick{overflow:hidden;border-bottom:1px solid var(--line2);margin:0 -36px;background:var(--ink);color:var(--bg)}
 .cool-tick div{display:flex;gap:28px;width:max-content;padding:6px 0;font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;animation:mq 38s linear infinite}
@@ -894,6 +906,7 @@ async function make(ev) {
     ok = true; stop(true);
     st.textContent = j.slow ? 'The model is too slow right now, so this is a general guide with the real checks. Press the button again in a few minutes for a plan written for your page.' : j.generic ? 'The model is out of budget today, so this is a general playbook.' : j.reused ? 'This link got a plan today already; here it is.' : 'Done. The plan is below.';
     draw(j.id, j.plan); document.getElementById('plan').scrollIntoView({ behavior: 'smooth' });
+    if (!j.reused && !j.generic && !j.slow) setTimeout(askStar, 1800);
   } catch (e) { stop(false); st.className = 'status err'; st.textContent = e.message; }
   finally { if (!ok) stop(false); go.disabled = false; go.textContent = label; }
 }
@@ -961,6 +974,21 @@ function burst(x, y, n) {
     d.animate([{ transform: 'translate(-50%,-50%) rotate(0)', opacity: 1 }, { transform: 'translate(' + (Math.cos(a) * v) + 'px,' + (Math.sin(a) * v + 120) + 'px) rotate(' + (Math.random() * 540) + 'deg)', opacity: 0 }], { duration: 700 + Math.random() * 600, easing: 'cubic-bezier(.2,.7,.4,1)' }).onfinish = () => d.remove();
   }
 }
+// Asked once per browser, after the first plan made here: a card with a star button and Later.
+function askStar() {
+  try { if (localStorage.getItem('grow-star-asked')) return; } catch (e) { return; }
+  const mark = () => { try { localStorage.setItem('grow-star-asked', '1'); } catch (e) {} };
+  const old = $('.star-ask'); if (old) old.remove();
+  const box = el('div', 'star-ask'); box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Star Grow on GitHub');
+  const close = () => { mark(); box.classList.remove('on'); setTimeout(() => box.remove(), 450); };
+  const x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.onclick = close;
+  const star = el('a', '', 'Star on GitHub'); star.href = 'https://github.com/flisk-sh/grow'; star.target = '_blank'; star.rel = 'noopener'; star.onclick = close;
+  const later = el('button', '', 'Later'); later.type = 'button'; later.onclick = close;
+  const row = el('div', 'row'); row.append(star, later);
+  box.append(el('h4', '', 'Plan ready!'), el('p', '', 'If Grow helped you, a GitHub star helps other makers find it.'), row, x);
+  document.body.append(box); requestAnimationFrame(() => box.classList.add('on'));
+}
+
 let coolToastT;
 function coolToast(msg) {
   let t = $('.cool-toast'); if (!t) { t = el('div', 'cool-toast'); t.setAttribute('role', 'status'); document.body.append(t); }
