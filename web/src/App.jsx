@@ -366,6 +366,7 @@ function Home({onPlan}) {
         <div className="url-row">
           <div className="url-field"><TextInput label={t('linkLabel')} isLabelHidden type="url" htmlName="url" autoComplete="url" value={url} onChange={setUrl} placeholder={hint} startIcon={ic(LinkIcon)} size="lg" /></div>
           <Button label={t('paste')} variant="secondary" size="lg" icon={ic(ClipboardDocumentIcon)} onClick={paste} type="button" />
+          <span className="next-cta" data-next-cta style={{display: 'inline-block', borderRadius: 12}}><Button label={busy ? t('making') : t('make')} variant="primary" size="lg" type="submit" isDisabled={busy} icon={ic(RocketLaunchIcon)} /></span>
         </div>
         {recent.length > 0 && <HStack gap={1} wrap="wrap" justify="center" align="center">
           <Text type="supporting" color="secondary">{t('recent')}</Text>
@@ -373,7 +374,6 @@ function Home({onPlan}) {
         </HStack>}
         <TextInput label={t('aboutLabel')} isLabelHidden value={about} onChange={setAbout} placeholder={t('aboutPlaceholder')} startIcon={ic(PencilSquareIcon)} />
         <HStack gap={2} justify="center" wrap="wrap">
-          <span className="next-cta" data-next-cta style={{display: 'inline-block', borderRadius: 12}}><Button label={busy ? t('making') : t('make')} variant="primary" type="submit" isDisabled={busy} icon={ic(RocketLaunchIcon)} /></span>
           <Button label={t('example')} variant="ghost" icon={ic(DocumentTextIcon)} href={PREFIX + '/example'} />
         </HStack>
       </VStack></form>
