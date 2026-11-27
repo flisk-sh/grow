@@ -16,6 +16,16 @@ body{overflow:hidden}
 .ring small{font-size:11px;font-weight:400;opacity:.65;margin-top:-6px}
 .hero{max-width:720px;margin:0 auto;padding:56px 16px 24px;text-align:center}
 .hero form{width:100%}
+.star-ask{position:fixed;right:16px;bottom:76px;z-index:50;width:min(340px,calc(100vw - 32px));background:var(--panel);color:var(--text, inherit);border:1px solid var(--line2, #d4d4d8);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:14px 16px;font:400 14px/1.45 system-ui,sans-serif;animation:star-in .35s ease-out}
+.star-ask strong{display:block;margin:0 22px 4px 0;font-weight:700}
+.star-ask p{margin:0 0 12px;opacity:.8}
+.star-row{display:flex;gap:8px}
+.star-row a,.star-row button{flex:1;font:600 13px/1 system-ui,sans-serif;padding:10px 12px;border-radius:10px;border:1px solid var(--line2, #d4d4d8);background:transparent;color:inherit;text-align:center;text-decoration:none;cursor:pointer}
+.star-row .star-go{background:#22c55e;border-color:#22c55e;color:#052e16}
+.star-x{position:absolute;top:8px;right:10px;background:none;border:0;color:inherit;font-size:18px;line-height:1;cursor:pointer;opacity:.6}
+@keyframes star-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.star-ask{animation:none}}
+@media (max-width:560px){.url-row{flex-wrap:wrap}.url-row>span[data-next-cta]{flex:1 0 100%;display:flex!important}.url-row>span[data-next-cta]>button{flex:1;width:100%}}
 .url-row{display:flex;gap:8px;align-items:stretch}.url-field{flex:1;min-width:0}.url-row>button,.url-row>a{flex:none}
 .done{opacity:.55}
 .prog-step{display:flex;align-items:center;gap:10px}
