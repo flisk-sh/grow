@@ -17,6 +17,7 @@ import {
   ArrowTopRightOnSquareIcon, ClipboardDocumentIcon, EnvelopeIcon, PaperAirplaneIcon, BookmarkIcon, ShareIcon, ArrowDownTrayIcon, SparklesIcon,
   MagnifyingGlassIcon, ChartBarIcon, MegaphoneIcon, ListBulletIcon, WrenchScrewdriverIcon, PlusIcon, UsersIcon, MapPinIcon, ArrowRightIcon,
   BriefcaseIcon, PencilSquareIcon, HomeIcon, RocketLaunchIcon, LinkIcon, DocumentTextIcon, ClipboardDocumentCheckIcon, ChatBubbleLeftRightIcon,
+  CheckCircleIcon, StarIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {Logo, Names} from './logos.jsx';
 import {GmailCard} from './cards/GmailCard.jsx';
@@ -414,6 +415,34 @@ function Nav({go, plan, id, me}) {
   );
 }
 
+// Asks once per browser, a moment after the page loads: a card with a star button and Later.
+function StarAsk() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let seen = true;
+    try { seen = !!localStorage.getItem('grow-star-asked'); } catch { seen = true; }
+    if (seen) return undefined;
+    const t = setTimeout(() => setShow(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+  const close = () => { try { localStorage.setItem('grow-star-asked', '1'); } catch {} setShow(false); };
+  return (
+    <div className="star-ask" role="dialog" aria-label="Star Grow on GitHub">
+      <div className="star-head">
+        <span className="star-check"><CheckCircleIcon width={20} height={20} /></span>
+        <strong>Thanks for trying Grow!</strong>
+        <button className="star-x" type="button" aria-label="Close" onClick={close}><XMarkIcon width={20} height={20} /></button>
+      </div>
+      <p>If Grow is helping you, a GitHub star helps other makers find it.</p>
+      <div className="star-row">
+        <a className="star-go" href="https://github.com/flisk-sh/grow" target="_blank" rel="noopener" onClick={close}><StarIcon width={18} height={18} />Star on GitHub</a>
+        <button className="star-later" type="button" onClick={close}>Later</button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const bare = () => location.pathname.slice(PREFIX.length);
   const parse = () => { const m = bare().match(/^\/(?:p\/([0-9a-f]{12})|(example))$/); return m ? (m[1] || 'example') : ''; };
@@ -446,6 +475,7 @@ export default function App() {
       <a className="pro-fab" href="https://chat.flisk.si" target="_blank" rel="noopener" title={t('proTitle')}>
         <Logo name="chat.flisk.si" url="https://chat.flisk.si" size={20} /><span>{t('pro')}</span>
       </a>
+      <StarAsk />
     </AppShell>
   );
 }

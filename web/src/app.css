@@ -16,6 +16,22 @@ body{overflow:hidden}
 .ring small{font-size:11px;font-weight:400;opacity:.65;margin-top:-6px}
 .hero{max-width:720px;margin:0 auto;padding:56px 16px 24px;text-align:center}
 .hero form{width:100%}
+.star-ask{position:fixed;right:16px;bottom:76px;z-index:50;width:min(440px,calc(100vw - 32px));background:#383838;color:#f1f1f1;border:1px solid #4d4d4d;border-radius:18px;box-shadow:0 16px 40px rgba(0,0,0,.35);padding:22px 24px 24px;font:400 16px/1.45 system-ui,sans-serif;animation:star-in .35s ease-out}
+.star-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.star-head strong{flex:1;font-size:17px;font-weight:700}
+.star-check{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#3e4f3e;color:#86efac;border:1px solid #4f6b4f;flex:none}
+.star-ask p{margin:0 0 22px;color:#b8b8b8}
+.star-row{display:flex;gap:12px}
+.star-row a,.star-row button{display:flex;align-items:center;justify-content:center;gap:10px;flex:1;font:600 16px/1 system-ui,sans-serif;padding:16px 14px;border-radius:12px;border:0;cursor:pointer;text-decoration:none}
+.star-row .star-go{background:#52492e;color:#fde68a}
+.star-row .star-go:hover{background:#5e5535}
+.star-row .star-later{flex:0 0 36%;background:#4a4a4a;color:#f1f1f1}
+.star-row .star-later:hover{background:#555}
+.star-x{background:none;border:0;color:#a3a3a3;cursor:pointer;padding:4px;display:inline-flex;border-radius:8px}
+.star-x:hover{color:#f1f1f1}
+@keyframes star-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.star-ask{animation:none}}
+@media (max-width:560px){.url-row{flex-wrap:wrap}.url-row>span[data-next-cta]{flex:1 0 100%;display:flex!important}.url-row>span[data-next-cta]>button{flex:1;width:100%}}
 .url-row{display:flex;gap:8px;align-items:stretch}.url-field{flex:1;min-width:0}.url-row>button,.url-row>a{flex:none}
 .done{opacity:.55}
 .prog-step{display:flex;align-items:center;gap:10px}
