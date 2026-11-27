@@ -156,6 +156,11 @@ async function route(req, env, deps = {}) {
     return json(200, { id: m[1], created: row.created, plan: JSON.parse(row.data) });
   }
 
+  // The path exists but takes only POST. Tell callers with a wrong method
+  // apart from a path that does not exist at all.
+  if (path === '/api/plan' && req.method !== 'POST')
+    return json(405, { error: 'Send a POST to /api/plan with {"url": "https://..."}' }, { allow: 'POST' });
+
   if (req.method === 'POST' && path === '/api/plan') {
     let body;
     try { body = await req.json(); } catch { return json(400, { error: 'Send JSON: {"url": "https://..."}' }); }
