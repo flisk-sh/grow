@@ -4,7 +4,13 @@
 
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-export const CSS = String.raw`.gaps{margin-top:18px;padding-top:14px;border-top:1px solid var(--line,#333)}.gaps h3{margin:0 0 6px}.gaps .btn{margin:6px 8px 0 0}.logo{width:16px;height:16px;vertical-align:-3px;margin-right:6px;border-radius:3px;flex:none;background:#fff;padding:1px;box-sizing:border-box}
+// First focusable element on every page: keyboard and screen-reader users
+// jump past the masthead and nav straight to the content (WCAG 2.4.1).
+export const SKIP_LINK = '<a class="skip-link" href="#main">Skip to content</a>';
+
+export const CSS = String.raw`.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:10px 14px;background:var(--ink);color:var(--bg);border:1px solid var(--line2);font:600 12px var(--mono);text-decoration:none}
+.skip-link:focus{left:0;top:0;outline:2px solid var(--acc)}
+.gaps{margin-top:18px;padding-top:14px;border-top:1px solid var(--line,#333)}.gaps h3{margin:0 0 6px}.gaps .btn{margin:6px 8px 0 0}.logo{width:16px;height:16px;vertical-align:-3px;margin-right:6px;border-radius:3px;flex:none;background:#fff;padding:1px;box-sizing:border-box}
 :root{--bg:#eeece5;--bg2:#e5e2d9;--panel:#f6f4ee;--panel2:#e8e5dc;--ink:#121212;--mut:#3d3d42;--faint:#6a6a70;--line:rgba(18,18,18,.13);--line2:rgba(18,18,18,.82);
 --acc:#22c55e;--accink:#04120a;--acctext:#137a3a;--tint:rgba(34,197,94,.12);--red:#be123c;--amber:#9a5300;
 --display:"Fraunces",Georgia,"Times New Roman",serif;--font:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color-scheme:light}
@@ -1021,14 +1027,14 @@ export function page({ planId = '', prefill = '', share = null } = {}) {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Old+Standard+TT:ital@1&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>${CSS}</style>
-<script defer data-domain="grow.flisk.si" src="https://flisk.sh/a.js"></script></head><body>
+<script defer data-domain="grow.flisk.si" src="https://flisk.sh/a.js"></script></head><body>${SKIP_LINK}
 <script src="https://flisk.si/assets/bar.js" data-product="Grow" data-icon="grow" data-accent="#22c55e" data-siblings="Cilytics,Ranker" data-text="Find your first customers with a plan made from your link." defer></script>
 <div class="wrap">
 <div class="dateline"><span>Vol. 1 · No. ${edNo} · ${edDate}</span><span>Free · No sign-in · Beta</span><span>Printed fresh in 20 seconds</span></div>
 <div class="mast"><a class="name" href="/">The Grow <em>Gazette</em></a><p class="tag">All the news that helps you find your first customers</p></div>
 <header class="nav"><a class="brand" href="/">Flisk Grow</a>
 <nav class="navr"><a href="#about">Front page</a><a href="#about">The Market</a><a href="#about">Letters</a><a href="#about">The Wire</a><a href="#about">Classifieds</a><a href="/me">My cabinet</a><a href="#api" class="hide-s">API</a><a href="https://github.com/flisk-sh/grow" class="hide-s">GitHub</a><a href="https://flisk.si">More from Flisk</a></nav></header>
-<main>
+<main id="main">
 <div class="hero"><div>
 <div class="kicker">Beta · free · no sign-in</div>
 <h1>Find your first customers.</h1>

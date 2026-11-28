@@ -1,6 +1,7 @@
 // The cabinet at /me: your sites, the people talking about the problem each one solves (social listening), and where
 // you listed it. A visitor gets a cabinet in this browser at once (signed cookie); GitHub sign-in keeps it across
 // browsers and moves the browser's sites into the account. Nothing is posted or sent for anyone.
+import { SKIP_LINK } from './page.js';
 import { httpUrl, LISTINGS, profileOf } from './plan.js';
 import { listen, mentions, notOwn, parseKeywords, redditSearch } from './listen.js';
 import { CSS } from './page.js';
@@ -400,10 +401,10 @@ export function cabinetPage() {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,700;9..144,800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>${CSS}${CAB_CSS}</style>
-<script defer data-domain="grow.flisk.si" src="https://flisk.sh/a.js"></script></head><body>
+<script defer data-domain="grow.flisk.si" src="https://flisk.sh/a.js"></script></head><body>${SKIP_LINK}
 <script src="https://flisk.si/assets/bar.js" data-product="Grow" data-icon="grow" data-accent="#22c55e" data-siblings="Cilytics,Ranker" data-text="Find your first customers with a plan made from your link." defer></script>
 <div class="wrap">
-<header class="nav"><a class="brand" href="/">Flisk Grow</a><nav class="navr" id="who"></nav></header>
+<header class="nav"><a class="brand" href="/">Flisk Grow</a><nav class="navr" id="who"></nav></header><main id="main">
 <section><h2>My cabinet</h2><p class="sub">Your sites, the people talking about the problem each one solves, and where you listed it. Nothing is posted for you.</p>
 <form id="add" novalidate><input id="addurl" type="url" inputmode="url" placeholder="https://your-site.com" aria-label="Link to add"><button class="btn go" type="submit">Add site</button></form>
 <p id="addst" class="status" role="status"></p><p id="err" class="status err"></p>
@@ -411,7 +412,7 @@ export function cabinetPage() {
 <div id="none" class="empty" hidden>No sites yet. Add the link to something you made.</div>
 </section>
 <div id="site"></div>
-<footer><span>Flisk Grow · beta</span><a href="/">Make a plan</a><a href="https://github.com/flisk-sh/grow">Source</a></footer>
+</main><footer><span>Flisk Grow · beta</span><a href="/">Make a plan</a><a href="https://github.com/flisk-sh/grow">Source</a></footer>
 </div>
 <div id="toast" class="toast" role="status"></div>
 <script>${CAB_JS}</script>

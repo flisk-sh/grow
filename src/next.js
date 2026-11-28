@@ -1,6 +1,7 @@
 // The Astryx (Meta design system) look of the plan pages: /next, /next/example and /next/p/<id>.
 // The app is built from web/ by scripts/embed-web.mjs into next-app.generated.js (committed, so deploys need no build step).
 // The Worker serves its JS, CSS and fonts as files at /_app/<name>.<hash>.<ext>, cached for a year.
+import { SKIP_LINK } from './page.js';
 import { SHELL, SITE, hreflangLinks, prefixOf } from './i18n.js';
 import { NEXT_CSS, NEXT_CSS_PATH, NEXT_FONTS, NEXT_JS, NEXT_JS_PATH } from './next-app.generated.js';
 
@@ -35,9 +36,9 @@ export function nextPage({ planId = '', prefill = '', share = null, index = fals
 ${index ? '' : '<meta name="robots" content="noindex, nofollow">'}<link rel="canonical" href="${canonical}">${index && home ? hreflangLinks() : ''}
 <link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="${NEXT_CSS_PATH}">
-<script defer data-domain="grow.flisk.si" src="https://flisk.sh/a.js"></script></head><body>
+<script defer data-domain="grow.flisk.si" src="https://flisk.sh/a.js"></script></head><body>${SKIP_LINK}
 <script src="https://flisk.si/assets/bar.js" data-product="Grow" data-icon="grow" data-accent="#22c55e" data-siblings="Cilytics,Ranker" data-text="${esc(S.barText)}" defer></script>
-<div id="root">${planId || share || bare ? '' : skeleton(S)}</div>
+<main id="main"><div id="root">${planId || share || bare ? '' : skeleton(S)}</div></main>
 <script>window.__BOOT__=${boot};</script>
 <script type="module" src="${NEXT_JS_PATH}"></script>
 </body></html>`;
